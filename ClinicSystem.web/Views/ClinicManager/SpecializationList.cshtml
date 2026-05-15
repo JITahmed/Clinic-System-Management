@@ -1,0 +1,56 @@
+﻿@model IEnumerable<ClinicSystem.Api.Models.Specialization>
+@{
+    ViewData["Title"] = "Specializations";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Specializations</h2>
+        <a asp-action="CreateSpecialization" class="btn btn-primary">+ Add Specialization</a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">@TempData["Success"]</div>
+    }
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info">No specializations found. Add one to get started.</div>
+    }
+    else
+    {
+        <table class="table table-striped table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>#</th>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var s in Model)
+                {
+                    <tr>
+                        <td>@s.Id</td>
+                        <td>@s.Name</td>
+                        <td>@s.Description</td>
+                        <td>
+                            <a asp-action="EditSpecialization" asp-route-id="@s.Id"
+                               class="btn btn-sm btn-warning">Edit</a>
+                            <form asp-action="DeleteSpecialization" asp-route-id="@s.Id"
+                                  method="post" class="d-inline"
+                                  onsubmit="return confirm('Delete this specialization?')">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+    <a asp-action="Dashboard" class="btn btn-secondary mt-3">← Back to Dashboard</a>
+</div>

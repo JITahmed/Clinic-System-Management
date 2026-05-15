@@ -1,0 +1,115 @@
+﻿@model ClinicSystem.Api.Models.Doctor
+@{
+    ViewData["Title"] = "Doctor Details";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Dr. @Model.User.FullName</h2>
+        <div>
+            <a asp-action="EditDoctor" asp-route-id="@Model.Id" class="btn btn-warning">Edit</a>
+            <a asp-action="DoctorList" class="btn btn-secondary ms-2">← Back</a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">Profile</div>
+                <div class="card-body">
+                    <p><strong>Email:</strong> @Model.User.Email</p>
+                    <p><strong>License:</strong> @Model.LicenseNumber</p>
+                    <p><strong>Experience:</strong> @Model.YearsOfExperience years</p>
+                    <p><strong>Fee:</strong> BD @Model.ConsultationFee</p>
+                    <p>
+                        <strong>Status:</strong>
+                        @if (Model.IsAvailable)
+                        {
+                            <span class="badge bg-success">Available</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-danger">Unavailable</span>
+                        }
+                    </p>
+                    <p><strong>Bio:</strong> @Model.Bio</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">Specializations</div>
+                <div class="card-body">
+                    @if (!Model.DoctorSpecializations.Any())
+                    {
+                        <p class="text-muted">No specializations assigned.</p>
+                    }
+                    else
+                    {
+                        <ul class="list-group list-group-flush">
+                            @foreach (var ds in Model.DoctorSpecializations)
+                            {
+                                <li class="list-group-item">@ds.Specialization.Name</li>
+                            }
+                        </ul>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-info text-white">Weekly Schedule</div>
+                <div class="card-body">
+                    @if (!Model.Schedules.Any())
+                    {
+                        <p class="text-muted">No schedule set.</p>
+                        <a asp-action="ManageSchedule" asp-route-id="@Model.Id"
+                           class="btn btn-sm btn-info">Set Schedule</a>
+                    }
+                    else
+                    {
+                        <ul class="list-group list-group-flush">
+                            @foreach (var s in Model.Schedules.Where(s => s.IsActive))
+                            {
+                                <li class="list-group-item">
+                                    @s.DayOfWeek: @s.StartTime.ToString(@"hh\:mm") - @s.EndTime.ToString(@"hh\:mm")
+                                </li>
+                            }
+                        </ul>
+                        <a asp-action="ManageSchedule" asp-route-id="@Model.Id"
+                           class="btn btn-sm btn-info mt-2">Edit Schedule</a>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-warning">Leave Periods</div>
+                <div class="card-body">
+                    @if (!Model.Leaves.Any())
+                    {
+                        <p class="text-muted">No leave periods.</p>
+                    }
+                    else
+                    {
+                        <ul class="list-group list-group-flush">
+                            @foreach (var l in Model.Leaves)
+                            {
+                                <li class="list-group-item">
+                                    @l.StartDate.ToString("dd MMM yyyy") -
+                                    @l.EndDate.ToString("dd MMM yyyy")
+                                    <br /><small>@l.Reason</small>
+                                </li>
+                            }
+                        </ul>
+                    }
+                    <a asp-action="ManageLeave" asp-route-id="@Model.Id"
+                       class="btn btn-sm btn-warning mt-2">Manage Leave</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
