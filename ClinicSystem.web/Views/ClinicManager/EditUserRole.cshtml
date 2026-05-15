@@ -1,0 +1,42 @@
+﻿@model ClinicSystem.Api.Models.ApplicationUser
+@{
+    ViewData["Title"] = "Change User Role";
+}
+
+<div class="container mt-4">
+    <h2>Change Role — @Model.FullName</h2>
+    <hr />
+
+    <div class="row">
+        <div class="col-md-5">
+            <div class="card">
+                <div class="card-body">
+                    <p><strong>Email:</strong> @Model.Email</p>
+                    <p>
+                        <strong>Current Role:</strong>
+                        <span class="badge bg-secondary">@ViewBag.CurrentRole</span>
+                    </p>
+
+                    <form asp-action="EditUserRole" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="UserId" value="@Model.Id" />
+
+                        <div class="mb-3">
+                            <label class="form-label">New Role</label>
+                            <select name="NewRole" class="form-select">
+                                <option value="Patient">Patient</option>
+                                <option value="Doctor">Doctor</option>
+                                <option value="Receptionist">Receptionist</option>
+                                <option value="ClinicManager">Clinic Manager</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn btn-warning w-100">Update Role</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <a asp-action="UserList" class="btn btn-secondary mt-3">← Back to Users</a>
+</div>

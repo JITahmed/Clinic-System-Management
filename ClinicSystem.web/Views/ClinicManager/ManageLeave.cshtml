@@ -1,0 +1,104 @@
+﻿@model ClinicSystem.Api.Models.Doctor
+@{
+    ViewData["Title"] = "Manage Leave";
+}
+
+<div class="container mt-4">
+    <h2>Leave Management — Dr. @Model.User.FullName</h2>
+    <hr />
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">@TempData["Success"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">@TempData["Error"]</div>
+    }
+
+    <div class="row g-4">
+        <!-- Add Leave Form -->
+        <div class="col-md-5">
+            <div class="card">
+                <div class="card-header bg-warning">
+                    <strong>Add Leave Period</strong>
+                </div>
+                <div class="card-body">
+                    <form asp-action="AddLeave" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="DoctorId" value="@Model.Id" />
+
+                        <div class="mb-3">
+                            <label class="form-label">Start Date</label>
+                            <input type="date" name="StartDate" class="form-control"
+                                   min="@DateTime.Today.ToString("yyyy-MM-dd")" required />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">End Date</label>
+                            <input type="date" name="EndDate" class="form-control"
+                                   min="@DateTime.Today.ToString("yyyy-MM-dd")" required />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Reason</label>
+                            <input type="text" name="Reason" class="form-control"
+                                   placeholder="e.g. Annual leave, Medical conference" />
+                        </div>
+
+                        <button type="submit" class="btn btn-warning w-100">Add Leave</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Existing Leave Periods -->
+        <div class="col-md-7">
+            <div class="card">
+                <div class="card-header bg-dark text-white">
+                    <strong>Existing Leave Periods</strong>
+                </div>
+                <div class="card-body">
+                    @if (!Model.Leaves.Any())
+                    {
+                        <p class="text-muted">No leave periods recorded.</p>
+                    }
+                    else
+                    {
+                        <table class="table table-sm table-striped">
+                            <thead>
+                                <tr>
+                                    <th>From</th>
+                                    <th>To</th>
+                                    <th>Reason</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var leave in Model.Leaves.OrderByDescending(l => l.StartDate))
+                                {
+                                    <tr>
+                                        <td>@leave.StartDate.ToString("dd MMM yyyy")</td>
+                                        <td>@leave.EndDate.ToString("dd MMM yyyy")</td>
+                                        <td>@leave.Reason</td>
+                                        <td>
+                                            <form asp-action="DeleteLeave" method="post"
+                                                  class="d-inline"
+                                                  onsubmit="return confirm('Remove this leave period?')">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="leaveId" value="@leave.Id" />
+                                                <input type="hidden" name="doctorId" value="@Model.Id" />
+                                                <button type="submit" class="btn btn-sm btn-danger">Remove</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <a asp-action="DoctorDetails" asp-route-id="@Model.Id"
+       class="btn btn-secondary mt-4">← Back to Doctor</a>
+</div>

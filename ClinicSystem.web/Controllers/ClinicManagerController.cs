@@ -308,6 +308,186 @@ namespace ClinicSystem.web.Controllers
 
 
 
+        // ---- DOCTOR SCHEDULE ------------------------------------
+
+        // GET: /ClinicManager/ManageSchedule/5
+        public async Task<IActionResult> ManageSchedule(int id)
+        {
+            var doctor = await _context.Doctors
+                .Include(d => d.User)
+                .Include(d => d.Schedules)
+                .FirstOrDefaultAsync(d => d.Id == id);
+
+            if (doctor == null) return NotFound();
+            return View(doctor);
+        }
+
+        // POST: /ClinicManager/SaveSchedule
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SaveSchedule(
+            int DoctorId,
+            List<DayOfWeek> WorkingDays,
+            List<string> StartTimes,
+            List<string> EndTimes)
+        {
+            var doctor = await _context.Doctors
+                .Include(d => d.Schedules)
+                .FirstOrDefaultAsync(d => d.Id == DoctorId);
+
+            if (doctor == null) return NotFound();
+
+            // Remove existing schedules
+            _context.DoctorSchedules.RemoveRange(doctor.Schedules);
+
+            // Add new schedules
+            for (int i = 0; i < WorkingDays.Count; i++)
+            {
+                if (TimeSpan.TryParse(StartTimes[i], out var start) &&
+                    TimeSpan.TryParse(EndTimes[i], out var end))
+                {
+                    _context.DoctorSchedules.Add(new DoctorSchedule
+                    {
+                        DoctorId = DoctorId,
+                        DayOfWeek = WorkingDays[i],
+                        StartTime = start,
+                        EndTime = end,
+                        IsActive = true
+                    });
+                }
+            }
+
+            await _context.SaveChangesAsync();
+            TempData["Success"] = "Schedule saved successfully.";
+            return RedirectToAction(nameof(DoctorDetails), new { id = DoctorId });
+        }
+
+
+
+
+        // ---- DOCTOR LEAVE ------------------------------------
+
+        // GET: /ClinicManager/ManageLeave/5
+        public async Task<IActionResult> ManageLeave(int id)
+        {
+            var doctor = await _context.Doctors
+                .Include(d => d.User)
+                .Include(d => d.Leaves)
+                .FirstOrDefaultAsync(d => d.Id == id);
+
+            if (doctor == null) return NotFound();
+            return View(doctor);
+        }
+
+        // POST: /ClinicManager/AddLeave
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddLeave(
+            int DoctorId,
+            DateTime StartDate,
+            DateTime EndDate,
+            string Reason)
+        {
+            if (EndDate < StartDate)
+            {
+                TempData["Error"] = "End date cannot be before start date.";
+                return RedirectToAction(nameof(ManageLeave), new { id = DoctorId });
+            }
+
+            _context.DoctorLeaves.Add(new DoctorLeave
+            {
+                DoctorId = DoctorId,
+                StartDate = StartDate,
+                EndDate = EndDate,
+                Reason = Reason ?? string.Empty
+            });
+
+            await _context.SaveChangesAsync();
+            TempData["Success"] = "Leave period added successfully.";
+            return RedirectToAction(nameof(ManageLeave), new { id = DoctorId });
+        }
+
+        // POST: /ClinicManager/DeleteLeave
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteLeave(int leaveId, int doctorId)
+        {
+            var leave = await _context.DoctorLeaves.FindAsync(leaveId);
+            if (leave != null)
+            {
+                _context.DoctorLeaves.Remove(leave);
+                await _context.SaveChangesAsync();
+                TempData["Success"] = "Leave period removed.";
+            }
+            return RedirectToAction(nameof(ManageLeave), new { id = doctorId });
+        }
+
+
+
+
+
+
+
+
+        //----- USER MANAGEMENT -----------------------------------
+
+        // GET: /ClinicManager/UserList
+        public async Task<IActionResult> UserList()
+        {
+            var users = await _userManager.Users.ToListAsync();
+            var userRoles = new Dictionary<string, IList<string>>();
+
+            foreach (var user in users)
+            {
+                userRoles[user.Id] = await _userManager.GetRolesAsync(user);
+            }
+
+            ViewBag.UserRoles = userRoles;
+            return View(users);
+        }
+
+        // GET: /ClinicManager/EditUserRole/userId
+        public async Task<IActionResult> EditUserRole(string id)
+        {
+            var user = await _userManager.FindByIdAsync(id);
+            if (user == null) return NotFound();
+
+            var currentRoles = await _userManager.GetRolesAsync(user);
+            ViewBag.CurrentRole = currentRoles.FirstOrDefault();
+            return View(user);
+        }
+
+        // POST: /ClinicManager/EditUserRole
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditUserRole(string UserId, string NewRole)
+        {
+            var user = await _userManager.FindByIdAsync(UserId);
+            if (user == null) return NotFound();
+
+            var allowedRoles = new[] { "Patient", "Doctor", "Receptionist", "ClinicManager" };
+            if (!allowedRoles.Contains(NewRole))
+            {
+                TempData["Error"] = "Invalid role selected.";
+                return RedirectToAction(nameof(UserList));
+            }
+
+            // Remove all current roles
+            var currentRoles = await _userManager.GetRolesAsync(user);
+            await _userManager.RemoveFromRolesAsync(user, currentRoles);
+
+            // Assign new role
+            await _userManager.AddToRoleAsync(user, NewRole);
+
+            TempData["Success"] = $"{user.FullName}'s role updated to {NewRole}.";
+            return RedirectToAction(nameof(UserList));
+        }
+
+
+
+
+
+
 
     }
 }

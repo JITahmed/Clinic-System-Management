@@ -84,48 +84,59 @@ namespace ClinicSystem.web.Areas.Identity.Pages.Account
 
                 if (result.Succeeded)
                 {
-                    // Assign the selected role
-                    var allowedRoles = new[] { "Patient", "Doctor" };
-                    var role = allowedRoles.Contains(Input.Role) ? Input.Role : "Patient";
-                    await _userManager.AddToRoleAsync(user, role);
-
-                    // If Patient, create a Patient profile
-                    if (role == "Patient")
+                    // Use a transaction so if anything fails, everything rolls back
+                    using var transaction = await _context.Database.BeginTransactionAsync();
+                    try
                     {
-                        var patient = new Patient
-                        {
-                            UserId = user.Id,
-                            PatientReferenceNumber = "PAT-" + Guid.NewGuid().ToString("N")[..8].ToUpper(),
-                            Gender = string.Empty,
-                            BloodType = string.Empty,
-                            Allergies = string.Empty,
-                            Address = string.Empty,
-                            EmergencyContactName = string.Empty,
-                            EmergencyContactPhone = string.Empty,
-                            DateOfBirth = DateTime.UtcNow
-                        };
-                        _context.Patients.Add(patient);
-                        await _context.SaveChangesAsync();
-                    }
+                        var allowedRoles = new[] { "Patient", "Doctor" };
+                        var role = allowedRoles.Contains(Input.Role) ? Input.Role : "Patient";
+                        await _userManager.AddToRoleAsync(user, role);
 
-                    // If Doctor, create a basic Doctor profile
-                    if (role == "Doctor")
+                        if (role == "Patient")
+                        {
+                            var patient = new Patient
+                            {
+                                UserId = user.Id,
+                                CPRNumber = "TEMP-" + Guid.NewGuid().ToString("N")[..8].ToUpper(),
+                                PatientReferenceNumber = "PAT-" + Guid.NewGuid().ToString("N")[..8].ToUpper(),
+                                Gender = string.Empty,
+                                BloodType = string.Empty,
+                                Allergies = string.Empty,
+                                Address = string.Empty,
+                                EmergencyContactName = string.Empty,
+                                EmergencyContactPhone = string.Empty,
+                                DateOfBirth = DateTime.UtcNow
+                            };
+                            _context.Patients.Add(patient);
+                            await _context.SaveChangesAsync();
+                        }
+
+                        if (role == "Doctor")
+                        {
+                            var doctor = new Doctor
+                            {
+                                UserId = user.Id,
+                                LicenseNumber = "LIC-" + Guid.NewGuid().ToString("N")[..8].ToUpper(),
+                                Bio = string.Empty,
+                                YearsOfExperience = 0,
+                                ConsultationFee = 0,
+                                IsAvailable = true
+                            };
+                            _context.Doctors.Add(doctor);
+                            await _context.SaveChangesAsync();
+                        }
+
+                        await transaction.CommitAsync();
+                        await _signInManager.SignInAsync(user, isPersistent: false);
+                        return LocalRedirect(returnUrl);
+                    }
+                    catch
                     {
-                        var doctor = new Doctor
-                        {
-                            UserId = user.Id,
-                            LicenseNumber = "LIC-" + Guid.NewGuid().ToString("N")[..8].ToUpper(),
-                            Bio = string.Empty,
-                            YearsOfExperience = 0,
-                            ConsultationFee = 0,
-                            IsAvailable = true
-                        };
-                        _context.Doctors.Add(doctor);
-                        await _context.SaveChangesAsync();
+                        await transaction.RollbackAsync();
+                        await _userManager.DeleteAsync(user);
+                        ModelState.AddModelError(string.Empty, "Registration failed. Please try again.");
+                        return Page();
                     }
-
-                    await _signInManager.SignInAsync(user, isPersistent: false);
-                    return LocalRedirect(returnUrl);
                 }
 
                 foreach (var error in result.Errors)

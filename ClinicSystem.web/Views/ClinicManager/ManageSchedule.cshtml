@@ -1,0 +1,107 @@
+﻿@model ClinicSystem.Api.Models.Doctor
+@{
+    ViewData["Title"] = "Manage Schedule";
+    var days = Enum.GetValues<DayOfWeek>();
+}
+
+<div class="container mt-4">
+    <h2>Schedule — Dr. @Model.User.FullName</h2>
+    <hr />
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">@TempData["Success"]</div>
+    }
+
+    <form asp-action="SaveSchedule" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="DoctorId" value="@Model.Id" />
+
+        <table class="table table-bordered">
+            <thead class="table-dark">
+                <tr>
+                    <th>Day</th>
+                    <th>Working?</th>
+                    <th>Start Time</th>
+                    <th>End Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var day in days)
+                {
+                    var existing = Model.Schedules.FirstOrDefault(s => s.DayOfWeek == day);
+                    var isWorking = existing != null && existing.IsActive;
+
+                    <tr>
+                        <td><strong>@day</strong></td>
+                        <td>
+                            <div class="form-check">
+                                <input class="form-check-input day-check" type="checkbox"
+                                       id="check_@day"
+                                       data-day="@day"
+                                       @(isWorking ? "checked" : "") />
+                            </div>
+                        </td>
+                        <td>
+                            <input type="time" class="form-control start-time"
+                                   id="start_@day"
+                                   value="@(existing != null ? existing.StartTime.ToString(@"hh\:mm") : "09:00")"
+                                   @(!isWorking ? "disabled" : "") />
+                        </td>
+                        <td>
+                            <input type="time" class="form-control end-time"
+                                   id="end_@day"
+                                   value="@(existing != null ? existing.EndTime.ToString(@"hh\:mm") : "17:00")"
+                                   @(!isWorking ? "disabled" : "") />
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <!-- Hidden fields submitted with form -->
+        <div id="scheduleData"></div>
+
+        <button type="submit" class="btn btn-primary" onclick="prepareSubmit()">
+            Save Schedule
+        </button>
+        <a asp-action="DoctorDetails" asp-route-id="@Model.Id"
+           class="btn btn-secondary ms-2">Cancel</a>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        // Enable/disable time inputs when checkbox is ticked
+        document.querySelectorAll('.day-check').forEach(function (checkbox) {
+            checkbox.addEventListener('change', function () {
+                var day = this.dataset.day;
+                var startInput = document.getElementById('start_' + day);
+                var endInput = document.getElementById('end_' + day);
+                startInput.disabled = !this.checked;
+                endInput.disabled = !this.checked;
+            });
+        });
+
+        // Build hidden fields before form submits
+        function prepareSubmit() {
+            var container = document.getElementById('scheduleData');
+            container.innerHTML = '';
+            var index = 0;
+
+            document.querySelectorAll('.day-check').forEach(function (checkbox) {
+                if (checkbox.checked) {
+                    var day = checkbox.dataset.day;
+                    var start = document.getElementById('start_' + day).value;
+                    var end = document.getElementById('end_' + day).value;
+
+                    container.innerHTML +=
+                        '<input type="hidden" name="WorkingDays[' + index + ']" value="' + day + '" />' +
+                        '<input type="hidden" name="StartTimes[' + index + ']" value="' + start + '" />' +
+                        '<input type="hidden" name="EndTimes[' + index + ']" value="' + end + '" />';
+                    index++;
+                }
+            });
+        }
+    </script>
+}
