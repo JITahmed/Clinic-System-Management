@@ -19,17 +19,14 @@
 
     <div class="mb-3">
         <label class="form-label">Specialization</label>
-        <select name="specializationId" class="form-control" required>
+        <select id="specializationSelect" name="specializationId" class="form-control" required>
             <option value="">Select specialization</option>
 
             @if (specializations != null)
             {
                 foreach (var specialization in specializations)
                 {
-                    var specializationName = specialization.GetType().GetProperty("Name")?.GetValue(specialization)?.ToString()
-                    ?? $"Specialization {specialization.Id}";
-
-                    <option value="@specialization.Id">@specializationName</option>
+                    <option value="@specialization.Id">@specialization.Name</option>
                 }
             }
         </select>
@@ -37,16 +34,19 @@
 
     <div class="mb-3">
         <label class="form-label">Doctor</label>
-        <select name="doctorId" class="form-control" required>
+        <select id="doctorSelect" name="doctorId" class="form-control" required>
             <option value="">Select doctor</option>
 
             @if (doctors != null)
             {
                 foreach (var doctor in doctors)
                 {
-                    var doctorName = doctor.User?.Email ?? doctor.LicenseNumber;
+                    var doctorName = doctor.User?.FullName ?? doctor.User?.Email ?? doctor.LicenseNumber;
 
-                    <option value="@doctor.Id">
+                    var specializationIds = string.Join(",",
+                    doctor.DoctorSpecializations.Select(ds => ds.SpecializationId));
+
+                    <option value="@doctor.Id" data-specializations="@specializationIds">
                         @doctorName - @doctor.LicenseNumber
                     </option>
                 }
@@ -71,3 +71,36 @@
     <button type="submit" class="btn btn-success">Submit Appointment Request</button>
     <a asp-controller="Patient" asp-action="Dashboard" class="btn btn-secondary">Cancel</a>
 </form>
+
+@section Scripts {
+    <script>
+        const specializationSelect = document.getElementById("specializationSelect");
+        const doctorSelect = document.getElementById("doctorSelect");
+
+        function filterDoctorsBySpecialization() {
+            const selectedSpecializationId = specializationSelect.value;
+
+            doctorSelect.value = "";
+
+            Array.from(doctorSelect.options).forEach(option => {
+                if (option.value === "") {
+                    option.hidden = false;
+                    return;
+                }
+
+                const doctorSpecializations = option.getAttribute("data-specializations") || "";
+                const specializationList = doctorSpecializations.split(",");
+
+                if (!selectedSpecializationId || specializationList.includes(selectedSpecializationId)) {
+                    option.hidden = false;
+                } else {
+                    option.hidden = true;
+                }
+            });
+        }
+
+        specializationSelect.addEventListener("change", filterDoctorsBySpecialization);
+
+        filterDoctorsBySpecialization();
+    </script>
+}

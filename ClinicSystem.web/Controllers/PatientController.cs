@@ -48,7 +48,7 @@ namespace ClinicSystem.web.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> BookAppointment(int doctorId, DateTime appointmentDate, string reasonForVisit)
+        public async Task<IActionResult> BookAppointment(int specializationId, int doctorId, DateTime appointmentDate, string reasonForVisit)
         {
             string? userId = _userManager.GetUserId(User);
 
@@ -63,6 +63,17 @@ namespace ClinicSystem.web.Controllers
             if (appointmentDate <= DateTime.Now)
             {
                 ModelState.AddModelError("", "Please choose a future appointment date and time.");
+                await LoadBookingDropdowns();
+                return View();
+            }
+
+            bool doctorMatchesSpecialization = await _context.DoctorSpecializations.AnyAsync(ds =>
+                ds.DoctorId == doctorId &&
+                ds.SpecializationId == specializationId);
+
+            if (!doctorMatchesSpecialization)
+            {
+                ModelState.AddModelError("", "Please select a doctor that matches the selected specialization.");
                 await LoadBookingDropdowns();
                 return View();
             }
@@ -153,7 +164,7 @@ namespace ClinicSystem.web.Controllers
                 .ToListAsync();
 
             ViewBag.Specializations = await _context.Specializations
-                .OrderBy(s => s.Id)
+                .OrderBy(s => s.Name)
                 .ToListAsync();
         }
     }
