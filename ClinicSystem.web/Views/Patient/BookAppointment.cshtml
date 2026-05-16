@@ -1,0 +1,42 @@
+﻿@{
+    ViewData["Title"] = "Book Appointment";
+}
+
+<h2>Book Appointment</h2>
+
+<form asp-controller="Patient" asp-action="BookAppointment" method="post">
+
+    <div class="mb-3">
+        <label class="form-label">Specialization</label>
+        <select name="specialization" class="form-control" required>
+            <option value="">Select specialization</option>
+            <option value="General Medicine">General Medicine</option>
+            <option value="Cardiology">Cardiology</option>
+            <option value="Dermatology">Dermatology</option>
+            <option value="Pediatrics">Pediatrics</option>
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Doctor</label>
+        <select name="doctorName" class="form-control" required>
+            <option value="">Select doctor</option>
+            <option value="Dr. Ahmed Ali">Dr. Ahmed Ali</option>
+            <option value="Dr. Fatima Hassan">Dr. Fatima Hassan</option>
+            <option value="Dr. Sara Mohammed">Dr. Sara Mohammed</option>
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Appointment Date and Time</label>
+        <input type="datetime-local" name="appointmentDate" class="form-control" required />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Reason for Visit</label>
+        <textarea name="reason" class="form-control" rows="4" required></textarea>
+    </div>
+
+    <button type="submit" class="btn btn-success">Submit Appointment Request</button>
+    <a asp-controller="Patient" asp-action="Dashboard" class="btn btn-secondary">Cancel</a>
+</form>

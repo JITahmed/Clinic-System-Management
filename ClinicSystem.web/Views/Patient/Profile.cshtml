@@ -1,0 +1,28 @@
+﻿@{
+    ViewData["Title"] = "Patient Profile";
+}
+
+<h2>Patient Profile</h2>
+
+<p>This page shows the patient's personal information.</p>
+
+<table class="table table-bordered">
+    <tr>
+        <th>Full Name</th>
+        <td>Patient Name</td>
+    </tr>
+    <tr>
+        <th>Email</th>
+        <td>patient@email.com</td>
+    </tr>
+    <tr>
+        <th>Phone Number</th>
+        <td>00000000</td>
+    </tr>
+    <tr>
+        <th>CPR Number</th>
+        <td>000000000</td>
+    </tr>
+</table>
+
+<a asp-controller="Patient" asp-action="Dashboard" class="btn btn-secondary">Back to Dashboard</a>
