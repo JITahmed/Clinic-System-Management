@@ -13,116 +13,177 @@
     var prescriptions = ViewBag.Prescriptions as List<Prescription> ?? new List<Prescription>();
 }
 
-<h2>Appointment History</h2>
-
-@if (TempData["SuccessMessage"] != null)
-{
-    <div class="alert alert-success">
-        @TempData["SuccessMessage"]
-    </div>
-}
-
-@if (!appointments.Any())
-{
-    <div class="alert alert-info">
-        You do not have any appointments yet.
-    </div>
-}
-else
-{
-    <table class="table table-bordered">
-        <thead>
-            <tr>
-                <th>Reference Number</th>
-                <th>Doctor</th>
-                <th>Date</th>
-                <th>Time</th>
-                <th>Reason</th>
-                <th>Status</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var appointment in appointments)
-            {
-                <tr>
-                    <td>@appointment.AppointmentReferenceNumber</td>
-                    <td>@(appointment.Doctor?.User?.FullName ?? appointment.Doctor?.User?.Email ?? appointment.Doctor?.LicenseNumber ?? "N/A")</td>
-                    <td>@appointment.AppointmentDate.ToString("dd/MM/yyyy")</td>
-                    <td>@appointment.StartTime.ToString(@"hh\:mm") - @appointment.EndTime.ToString(@"hh\:mm")</td>
-                    <td>@appointment.ReasonForVisit</td>
-                    <td>@appointment.Status</td>
-                </tr>
-            }
-        </tbody>
-    </table>
-}
-
-<hr />
-
-<h2>Visit Records</h2>
-
-@if (!completedVisits.Any())
-{
-    <div class="alert alert-info">
-        No completed visit records are available yet.
-    </div>
-}
-else
-{
-    @foreach (var appointment in completedVisits)
+@functions {
+    string GetStatusBadgeClass(object status)
     {
-        var visit = appointment.VisitRecord!;
+        var statusText = status.ToString();
 
-        var visitPrescriptions = prescriptions
-            .Where(p => p.VisitRecordId == visit.Id)
-            .ToList();
+        return statusText switch
+        {
+            "Requested" => "badge bg-warning text-dark",
+            "Confirmed" => "badge bg-primary",
+            "CheckedIn" => "badge bg-info text-dark",
+            "InProgress" => "badge bg-info text-dark",
+            "Completed" => "badge bg-success",
+            "Cancelled" => "badge bg-danger",
+            "Missed" => "badge bg-dark",
+            _ => "badge bg-secondary"
+        };
+    }
+}
 
-        <div class="card mb-3">
-            <div class="card-header">
-                Visit on @appointment.AppointmentDate.ToString("dd/MM/yyyy")
-                with @(appointment.Doctor?.User?.FullName ?? appointment.Doctor?.User?.Email ?? "Doctor")
-            </div>
+<div class="container mt-4">
+    <div class="mb-4">
+        <h2>Appointment History</h2>
+        <p class="text-muted">View your appointments, completed visits, and prescriptions.</p>
+    </div>
 
-            <div class="card-body">
-                <p><strong>Doctor Notes:</strong> @visit.DoctorNotes</p>
-                <p><strong>Diagnosis:</strong> @visit.Diagnosis</p>
-                <p><strong>Treatment Plan:</strong> @visit.TreatmentPlan</p>
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">
+            @TempData["SuccessMessage"]
+        </div>
+    }
 
-                <h5>Prescriptions</h5>
+    <div class="card shadow-sm mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Appointments</h5>
+        </div>
 
-                @if (!visitPrescriptions.Any())
-                {
-                    <p>No prescriptions recorded for this visit.</p>
-                }
-                else
-                {
-                    <table class="table table-sm table-bordered">
-                        <thead>
+        <div class="card-body">
+            @if (!appointments.Any())
+            {
+                <div class="alert alert-info mb-0">
+                    You do not have any appointments yet.
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle">
+                        <thead class="table-light">
                             <tr>
-                                <th>Medication</th>
-                                <th>Dosage</th>
-                                <th>Frequency</th>
-                                <th>Duration</th>
-                                <th>Instructions</th>
+                                <th>Reference Number</th>
+                                <th>Doctor</th>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>Reason</th>
+                                <th>Status</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var prescription in visitPrescriptions)
+                            @foreach (var appointment in appointments)
                             {
                                 <tr>
-                                    <td>@prescription.MedicationName</td>
-                                    <td>@prescription.Dosage</td>
-                                    <td>@prescription.Frequency</td>
-                                    <td>@prescription.Duration</td>
-                                    <td>@prescription.Instructions</td>
+                                    <td>@appointment.AppointmentReferenceNumber</td>
+                                    <td>@(appointment.Doctor?.User?.FullName ?? appointment.Doctor?.User?.Email ?? appointment.Doctor?.LicenseNumber ?? "N/A")</td>
+                                    <td>@appointment.AppointmentDate.ToString("dd/MM/yyyy")</td>
+                                    <td>@appointment.StartTime.ToString(@"hh\:mm") - @appointment.EndTime.ToString(@"hh\:mm")</td>
+                                    <td>@appointment.ReasonForVisit</td>
+                                    <td>
+                                        <span class="@GetStatusBadgeClass(appointment.Status)">
+                                            @appointment.Status
+                                        </span>
+                                    </td>
                                 </tr>
                             }
                         </tbody>
                     </table>
-                }
-            </div>
+                </div>
+            }
         </div>
-    }
-}
+    </div>
 
-<a asp-controller="Patient" asp-action="Dashboard" class="btn btn-secondary">Back to Dashboard</a>
+    <div class="card shadow-sm mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Visit Records</h5>
+        </div>
+
+        <div class="card-body">
+            @if (!completedVisits.Any())
+            {
+                <div class="alert alert-info mb-0">
+                    No completed visit records are available yet.
+                </div>
+            }
+            else
+            {
+                @foreach (var appointment in completedVisits)
+                {
+                    var visit = appointment.VisitRecord!;
+
+                    var visitPrescriptions = prescriptions
+                    .Where(p => p.VisitRecordId == visit.Id)
+                    .ToList();
+
+                    <div class="border rounded p-3 mb-3">
+                        <h5>
+                            Visit on @appointment.AppointmentDate.ToString("dd/MM/yyyy")
+                        </h5>
+
+                        <p class="text-muted mb-2">
+                            Doctor:
+                            @(appointment.Doctor?.User?.FullName ?? appointment.Doctor?.User?.Email ?? "Doctor")
+                        </p>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <strong>Doctor Notes</strong>
+                                <p>@visit.DoctorNotes</p>
+                            </div>
+
+                            <div class="col-md-4">
+                                <strong>Diagnosis</strong>
+                                <p>@visit.Diagnosis</p>
+                            </div>
+
+                            <div class="col-md-4">
+                                <strong>Treatment Plan</strong>
+                                <p>@visit.TreatmentPlan</p>
+                            </div>
+                        </div>
+
+                        <h6>Prescriptions</h6>
+
+                        @if (!visitPrescriptions.Any())
+                        {
+                            <p class="text-muted">No prescriptions recorded for this visit.</p>
+                        }
+                        else
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Medication</th>
+                                            <th>Dosage</th>
+                                            <th>Frequency</th>
+                                            <th>Duration</th>
+                                            <th>Instructions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var prescription in visitPrescriptions)
+                                        {
+                                            <tr>
+                                                <td>@prescription.MedicationName</td>
+                                                <td>@prescription.Dosage</td>
+                                                <td>@prescription.Frequency</td>
+                                                <td>@prescription.Duration</td>
+                                                <td>@prescription.Instructions</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+                }
+            }
+        </div>
+    </div>
+
+    <a asp-controller="Patient" asp-action="Dashboard" class="btn btn-secondary">
+        Back to Dashboard
+    </a>
+</div>

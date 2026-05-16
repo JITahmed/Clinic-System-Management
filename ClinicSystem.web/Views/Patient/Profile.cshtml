@@ -4,27 +4,83 @@
     ViewData["Title"] = "Patient Profile";
 }
 
-<h2>Patient Profile</h2>
+<div class="container mt-4">
+    <div class="mb-4">
+        <h2>Patient Profile</h2>
+        <p class="text-muted">View your registered personal and emergency contact details.</p>
+    </div>
 
-<p>This page shows the patient's personal information.</p>
+    <div class="card shadow-sm mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Personal Information</h5>
+        </div>
 
-<table class="table table-bordered">
-    <tr>
-        <th>Email</th>
-        <td>@(Model.User?.Email ?? "N/A")</td>
-    </tr>
-    <tr>
-        <th>Phone Number</th>
-        <td>@(Model.User?.PhoneNumber ?? "N/A")</td>
-    </tr>
-    <tr>
-        <th>CPR Number</th>
-        <td>@Model.CPRNumber</td>
-    </tr>
-    <tr>
-        <th>Patient Reference Number</th>
-        <td>@Model.PatientReferenceNumber</td>
-    </tr>
-</table>
+        <div class="card-body">
+            <table class="table table-bordered mb-0">
+                <tr>
+                    <th style="width: 30%;">Full Name</th>
+                    <td>@(Model.User?.FullName ?? "N/A")</td>
+                </tr>
+                <tr>
+                    <th>Email</th>
+                    <td>@(Model.User?.Email ?? "N/A")</td>
+                </tr>
+                <tr>
+                    <th>Phone Number</th>
+                    <td>@(Model.User?.PhoneNumber ?? "N/A")</td>
+                </tr>
+                <tr>
+                    <th>CPR Number</th>
+                    <td>@Model.CPRNumber</td>
+                </tr>
+                <tr>
+                    <th>Patient Reference Number</th>
+                    <td>@Model.PatientReferenceNumber</td>
+                </tr>
+                <tr>
+                    <th>Date of Birth</th>
+                    <td>@Model.DateOfBirth.ToString("dd/MM/yyyy")</td>
+                </tr>
+                <tr>
+                    <th>Gender</th>
+                    <td>@Model.Gender</td>
+                </tr>
+                <tr>
+                    <th>Blood Type</th>
+                    <td>@Model.BloodType</td>
+                </tr>
+                <tr>
+                    <th>Allergies</th>
+                    <td>@Model.Allergies</td>
+                </tr>
+                <tr>
+                    <th>Address</th>
+                    <td>@Model.Address</td>
+                </tr>
+            </table>
+        </div>
+    </div>
 
-<a asp-controller="Patient" asp-action="Dashboard" class="btn btn-secondary">Back to Dashboard</a>
+    <div class="card shadow-sm mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Emergency Contact</h5>
+        </div>
+
+        <div class="card-body">
+            <table class="table table-bordered mb-0">
+                <tr>
+                    <th style="width: 30%;">Contact Name</th>
+                    <td>@Model.EmergencyContactName</td>
+                </tr>
+                <tr>
+                    <th>Contact Phone</th>
+                    <td>@Model.EmergencyContactPhone</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <a asp-controller="Patient" asp-action="Dashboard" class="btn btn-secondary">
+        Back to Dashboard
+    </a>
+</div>
