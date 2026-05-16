@@ -85,36 +85,44 @@ namespace ClinicSystem.Api.Data
                 await context.SaveChangesAsync();
             }
 
-            // Step 5: Create specializations
-            if (!await context.Specializations.AnyAsync())
+            // Step 5: Create specializations if they do not exist
+            if (!await context.Specializations.AnyAsync(s => s.Name == "General Medicine"))
             {
-                var specializations = new List<Specialization>
+                context.Specializations.Add(new Specialization
                 {
-                    new Specialization
-                    {
-                        Name = "General Medicine",
-                        Description = "General health checkups and common medical concerns."
-                    },
-                    new Specialization
-                    {
-                        Name = "Cardiology",
-                        Description = "Heart and blood pressure related care."
-                    },
-                    new Specialization
-                    {
-                        Name = "Dermatology",
-                        Description = "Skin, hair, and allergy related care."
-                    },
-                    new Specialization
-                    {
-                        Name = "Pediatrics",
-                        Description = "Medical care for children."
-                    }
-                };
-
-                context.Specializations.AddRange(specializations);
-                await context.SaveChangesAsync();
+                    Name = "General Medicine",
+                    Description = "General health checkups and common medical concerns."
+                });
             }
+
+            if (!await context.Specializations.AnyAsync(s => s.Name == "Cardiology"))
+            {
+                context.Specializations.Add(new Specialization
+                {
+                    Name = "Cardiology",
+                    Description = "Heart and blood pressure related care."
+                });
+            }
+
+            if (!await context.Specializations.AnyAsync(s => s.Name == "Dermatology"))
+            {
+                context.Specializations.Add(new Specialization
+                {
+                    Name = "Dermatology",
+                    Description = "Skin, hair, and allergy related care."
+                });
+            }
+
+            if (!await context.Specializations.AnyAsync(s => s.Name == "Pediatrics"))
+            {
+                context.Specializations.Add(new Specialization
+                {
+                    Name = "Pediatrics",
+                    Description = "Medical care for children."
+                });
+            }
+
+            await context.SaveChangesAsync();
 
             // Step 6: Link doctor to General Medicine specialization
             var seededDoctor = await context.Doctors
@@ -140,6 +148,60 @@ namespace ClinicSystem.Api.Data
                     context.DoctorSpecializations.Add(doctorSpecialization);
                     await context.SaveChangesAsync();
                 }
+            }
+
+            // Step 7: Create sample completed visit record and prescription for patient testing
+            var seededPatient = await context.Patients
+                .FirstOrDefaultAsync(p => p.PatientReferenceNumber == "PAT-0001");
+
+            var seededDoctorForVisit = await context.Doctors
+                .FirstOrDefaultAsync(d => d.LicenseNumber == "DOC-0001");
+
+            if (seededPatient != null &&
+                seededDoctorForVisit != null &&
+                !await context.Appointments.AnyAsync(a => a.AppointmentReferenceNumber == "APT-HISTORY-0001"))
+            {
+                var completedAppointment = new Appointment
+                {
+                    PatientId = seededPatient.Id,
+                    DoctorId = seededDoctorForVisit.Id,
+                    AppointmentReferenceNumber = "APT-HISTORY-0001",
+                    AppointmentDate = DateTime.Today.AddDays(-7),
+                    StartTime = new TimeSpan(9, 0, 0),
+                    EndTime = new TimeSpan(9, 30, 0),
+                    Status = AppointmentStatus.Completed,
+                    ReasonForVisit = "Fever and headache",
+                    CreatedByUserId = doctorUser?.Id ?? string.Empty,
+                    CreatedAt = DateTime.UtcNow.AddDays(-7)
+                };
+
+                context.Appointments.Add(completedAppointment);
+                await context.SaveChangesAsync();
+
+                var visitRecord = new VisitRecord
+                {
+                    AppointmentId = completedAppointment.Id,
+                    DoctorNotes = "Patient had mild fever and headache symptoms.",
+                    Diagnosis = "Common cold",
+                    TreatmentPlan = "Rest, fluids, and medication as prescribed.",
+                    VisitDate = completedAppointment.AppointmentDate
+                };
+
+                context.VisitRecords.Add(visitRecord);
+                await context.SaveChangesAsync();
+
+                var prescription = new Prescription
+                {
+                    VisitRecordId = visitRecord.Id,
+                    MedicationName = "Paracetamol",
+                    Dosage = "500mg",
+                    Frequency = "Twice daily",
+                    Duration = "3 days",
+                    Instructions = "Take after food."
+                };
+
+                context.Prescriptions.Add(prescription);
+                await context.SaveChangesAsync();
             }
         }
 

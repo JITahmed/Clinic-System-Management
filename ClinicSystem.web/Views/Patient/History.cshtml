@@ -1,7 +1,16 @@
 ﻿@model IEnumerable<ClinicSystem.Api.Models.Appointment>
+@using ClinicSystem.Api.Models
 
 @{
     ViewData["Title"] = "Appointment History";
+
+    var appointments = Model.ToList();
+
+    var completedVisits = appointments
+        .Where(a => a.VisitRecord != null)
+        .ToList();
+
+    var prescriptions = ViewBag.Prescriptions as List<Prescription> ?? new List<Prescription>();
 }
 
 <h2>Appointment History</h2>
@@ -13,7 +22,7 @@
     </div>
 }
 
-@if (!Model.Any())
+@if (!appointments.Any())
 {
     <div class="alert alert-info">
         You do not have any appointments yet.
@@ -33,11 +42,11 @@ else
             </tr>
         </thead>
         <tbody>
-            @foreach (var appointment in Model)
+            @foreach (var appointment in appointments)
             {
                 <tr>
                     <td>@appointment.AppointmentReferenceNumber</td>
-                    <td>@(appointment.Doctor?.User?.Email ?? appointment.Doctor?.LicenseNumber ?? "N/A")</td>
+                    <td>@(appointment.Doctor?.User?.FullName ?? appointment.Doctor?.User?.Email ?? appointment.Doctor?.LicenseNumber ?? "N/A")</td>
                     <td>@appointment.AppointmentDate.ToString("dd/MM/yyyy")</td>
                     <td>@appointment.StartTime.ToString(@"hh\:mm") - @appointment.EndTime.ToString(@"hh\:mm")</td>
                     <td>@appointment.ReasonForVisit</td>
@@ -46,6 +55,74 @@ else
             }
         </tbody>
     </table>
+}
+
+<hr />
+
+<h2>Visit Records</h2>
+
+@if (!completedVisits.Any())
+{
+    <div class="alert alert-info">
+        No completed visit records are available yet.
+    </div>
+}
+else
+{
+    @foreach (var appointment in completedVisits)
+    {
+        var visit = appointment.VisitRecord!;
+
+        var visitPrescriptions = prescriptions
+            .Where(p => p.VisitRecordId == visit.Id)
+            .ToList();
+
+        <div class="card mb-3">
+            <div class="card-header">
+                Visit on @appointment.AppointmentDate.ToString("dd/MM/yyyy")
+                with @(appointment.Doctor?.User?.FullName ?? appointment.Doctor?.User?.Email ?? "Doctor")
+            </div>
+
+            <div class="card-body">
+                <p><strong>Doctor Notes:</strong> @visit.DoctorNotes</p>
+                <p><strong>Diagnosis:</strong> @visit.Diagnosis</p>
+                <p><strong>Treatment Plan:</strong> @visit.TreatmentPlan</p>
+
+                <h5>Prescriptions</h5>
+
+                @if (!visitPrescriptions.Any())
+                {
+                    <p>No prescriptions recorded for this visit.</p>
+                }
+                else
+                {
+                    <table class="table table-sm table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Medication</th>
+                                <th>Dosage</th>
+                                <th>Frequency</th>
+                                <th>Duration</th>
+                                <th>Instructions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var prescription in visitPrescriptions)
+                            {
+                                <tr>
+                                    <td>@prescription.MedicationName</td>
+                                    <td>@prescription.Dosage</td>
+                                    <td>@prescription.Frequency</td>
+                                    <td>@prescription.Duration</td>
+                                    <td>@prescription.Instructions</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+    }
 }
 
 <a asp-controller="Patient" asp-action="Dashboard" class="btn btn-secondary">Back to Dashboard</a>

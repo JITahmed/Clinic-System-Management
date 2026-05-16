@@ -124,9 +124,19 @@ namespace ClinicSystem.web.Controllers
             var appointments = await _context.Appointments
                 .Include(a => a.Doctor)
                     .ThenInclude(d => d.User)
+                .Include(a => a.VisitRecord)
                 .Where(a => a.PatientId == patient.Id)
                 .OrderByDescending(a => a.AppointmentDate)
                 .ThenByDescending(a => a.StartTime)
+                .ToListAsync();
+
+            var visitRecordIds = appointments
+                .Where(a => a.VisitRecord != null)
+                .Select(a => a.VisitRecord!.Id)
+                .ToList();
+
+            ViewBag.Prescriptions = await _context.Prescriptions
+                .Where(p => visitRecordIds.Contains(p.VisitRecordId))
                 .ToListAsync();
 
             return View(appointments);
