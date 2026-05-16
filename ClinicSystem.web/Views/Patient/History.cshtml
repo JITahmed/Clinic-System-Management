@@ -1,4 +1,6 @@
-﻿@{
+﻿@model IEnumerable<ClinicSystem.Api.Models.Appointment>
+
+@{
     ViewData["Title"] = "Appointment History";
 }
 
@@ -11,25 +13,39 @@
     </div>
 }
 
-<table class="table table-bordered">
-    <thead>
-        <tr>
-            <th>Doctor</th>
-            <th>Specialization</th>
-            <th>Date</th>
-            <th>Reason</th>
-            <th>Status</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td>Dr. Ahmed Ali</td>
-            <td>General Medicine</td>
-            <td>Upcoming</td>
-            <td>General checkup</td>
-            <td>Requested</td>
-        </tr>
-    </tbody>
-</table>
+@if (!Model.Any())
+{
+    <div class="alert alert-info">
+        You do not have any appointments yet.
+    </div>
+}
+else
+{
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Reference Number</th>
+                <th>Doctor</th>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Reason</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var appointment in Model)
+            {
+                <tr>
+                    <td>@appointment.AppointmentReferenceNumber</td>
+                    <td>@(appointment.Doctor?.User?.Email ?? appointment.Doctor?.LicenseNumber ?? "N/A")</td>
+                    <td>@appointment.AppointmentDate.ToString("dd/MM/yyyy")</td>
+                    <td>@appointment.StartTime.ToString(@"hh\:mm") - @appointment.EndTime.ToString(@"hh\:mm")</td>
+                    <td>@appointment.ReasonForVisit</td>
+                    <td>@appointment.Status</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
 
 <a asp-controller="Patient" asp-action="Dashboard" class="btn btn-secondary">Back to Dashboard</a>

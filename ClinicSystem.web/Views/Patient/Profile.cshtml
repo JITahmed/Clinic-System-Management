@@ -1,4 +1,6 @@
-﻿@{
+﻿@model ClinicSystem.Api.Models.Patient
+
+@{
     ViewData["Title"] = "Patient Profile";
 }
 
@@ -8,20 +10,20 @@
 
 <table class="table table-bordered">
     <tr>
-        <th>Full Name</th>
-        <td>Patient Name</td>
-    </tr>
-    <tr>
         <th>Email</th>
-        <td>patient@email.com</td>
+        <td>@(Model.User?.Email ?? "N/A")</td>
     </tr>
     <tr>
         <th>Phone Number</th>
-        <td>00000000</td>
+        <td>@(Model.User?.PhoneNumber ?? "N/A")</td>
     </tr>
     <tr>
         <th>CPR Number</th>
-        <td>000000000</td>
+        <td>@Model.CPRNumber</td>
+    </tr>
+    <tr>
+        <th>Patient Reference Number</th>
+        <td>@Model.PatientReferenceNumber</td>
     </tr>
 </table>
 

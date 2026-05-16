@@ -1,40 +1,71 @@
-﻿@{
+﻿@using ClinicSystem.Api.Models
+
+@{
     ViewData["Title"] = "Book Appointment";
+
+    var doctors = ViewBag.Doctors as List<Doctor>;
+    var specializations = ViewBag.Specializations as List<Specialization>;
 }
 
 <h2>Book Appointment</h2>
 
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="alert alert-danger" asp-validation-summary="All"></div>
+}
+
 <form asp-controller="Patient" asp-action="BookAppointment" method="post">
+    @Html.AntiForgeryToken()
 
     <div class="mb-3">
         <label class="form-label">Specialization</label>
-        <select name="specialization" class="form-control" required>
+        <select name="specializationId" class="form-control" required>
             <option value="">Select specialization</option>
-            <option value="General Medicine">General Medicine</option>
-            <option value="Cardiology">Cardiology</option>
-            <option value="Dermatology">Dermatology</option>
-            <option value="Pediatrics">Pediatrics</option>
+
+            @if (specializations != null)
+            {
+                foreach (var specialization in specializations)
+                {
+                    var specializationName = specialization.GetType().GetProperty("Name")?.GetValue(specialization)?.ToString()
+                    ?? $"Specialization {specialization.Id}";
+
+                    <option value="@specialization.Id">@specializationName</option>
+                }
+            }
         </select>
     </div>
 
     <div class="mb-3">
         <label class="form-label">Doctor</label>
-        <select name="doctorName" class="form-control" required>
+        <select name="doctorId" class="form-control" required>
             <option value="">Select doctor</option>
-            <option value="Dr. Ahmed Ali">Dr. Ahmed Ali</option>
-            <option value="Dr. Fatima Hassan">Dr. Fatima Hassan</option>
-            <option value="Dr. Sara Mohammed">Dr. Sara Mohammed</option>
+
+            @if (doctors != null)
+            {
+                foreach (var doctor in doctors)
+                {
+                    var doctorName = doctor.User?.Email ?? doctor.LicenseNumber;
+
+                    <option value="@doctor.Id">
+                        @doctorName - @doctor.LicenseNumber
+                    </option>
+                }
+            }
         </select>
     </div>
 
     <div class="mb-3">
         <label class="form-label">Appointment Date and Time</label>
-        <input type="datetime-local" name="appointmentDate" class="form-control" required />
+        <input type="datetime-local"
+               name="appointmentDate"
+               class="form-control"
+               min="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")"
+               required />
     </div>
 
     <div class="mb-3">
         <label class="form-label">Reason for Visit</label>
-        <textarea name="reason" class="form-control" rows="4" required></textarea>
+        <textarea name="reasonForVisit" class="form-control" rows="4" required></textarea>
     </div>
 
     <button type="submit" class="btn btn-success">Submit Appointment Request</button>
