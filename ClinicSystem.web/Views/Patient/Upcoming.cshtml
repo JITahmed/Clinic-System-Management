@@ -1,0 +1,113 @@
+﻿@using ClinicSystem.Api.Models
+@model IEnumerable<ClinicSystem.Api.Models.Appointment>
+
+@{
+    ViewData["Title"] = "Upcoming Appointments";
+}
+
+<div class="container mt-4">
+    <h2>Upcoming Appointments</h2>
+    <p class="text-muted">View your requested and confirmed future appointments.</p>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">
+            @TempData["SuccessMessage"]
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">
+            @TempData["ErrorMessage"]
+        </div>
+    }
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info">
+            You do not have any upcoming appointments.
+        </div>
+    }
+    else
+    {
+        <table class="table table-bordered table-striped">
+            <thead class="table-dark">
+                <tr>
+                    <th>Reference</th>
+                    <th>Doctor</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Reason</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @foreach (var appointment in Model)
+                {
+                    <tr>
+                        <td>@appointment.AppointmentReferenceNumber</td>
+
+                        <td>
+                            @(appointment.Doctor?.User?.FullName ?? "Doctor")
+                        </td>
+
+                        <td>
+                            @appointment.AppointmentDate.ToString("dd/MM/yyyy")
+                        </td>
+
+                        <td>
+                            @appointment.StartTime.ToString(@"hh\:mm")
+                        </td>
+
+                        <td>
+                            @appointment.ReasonForVisit
+                        </td>
+
+                        <td>
+                            @if (appointment.Status == AppointmentStatus.Requested)
+                            {
+                                <span class="badge bg-warning text-dark">Requested</span>
+                            }
+                            else if (appointment.Status == AppointmentStatus.Confirmed)
+                            {
+                                <span class="badge bg-success">Confirmed</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">@appointment.Status</span>
+                            }
+                        </td>
+
+                        <td>
+                            @if (appointment.Status == AppointmentStatus.Requested ||
+                                                appointment.Status == AppointmentStatus.Confirmed)
+                            {
+                                <form asp-controller="Patient"
+                                      asp-action="CancelAppointment"
+                                      asp-route-id="@appointment.Id"
+                                      method="post"
+                                      onsubmit="return confirm('Are you sure you want to cancel this appointment?');">
+
+                                    <button type="submit" class="btn btn-danger btn-sm">
+                                        Cancel
+                                    </button>
+                                </form>
+                            }
+                            else
+                            {
+                                <span class="text-muted">Not available</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+    <a asp-controller="Patient" asp-action="Dashboard" class="btn btn-secondary">
+        Back to Dashboard
+    </a>
+</div>

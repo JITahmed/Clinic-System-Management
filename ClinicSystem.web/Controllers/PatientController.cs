@@ -117,7 +117,80 @@ namespace ClinicSystem.web.Controllers
             await _context.SaveChangesAsync();
 
             TempData["SuccessMessage"] = "Appointment request submitted successfully.";
-            return RedirectToAction(nameof(History));
+            return RedirectToAction(nameof(Upcoming));
+        }
+
+        public async Task<IActionResult> Upcoming()
+        {
+            string? userId = _userManager.GetUserId(User);
+
+            var patient = await _context.Patients
+                .FirstOrDefaultAsync(p => p.UserId == userId);
+
+            if (patient == null)
+            {
+                return NotFound("Patient profile not found.");
+            }
+
+            DateTime today = DateTime.Today;
+            TimeSpan currentTime = DateTime.Now.TimeOfDay;
+
+            var appointments = await _context.Appointments
+                .Include(a => a.Doctor)
+                    .ThenInclude(d => d.User)
+                .Where(a => a.PatientId == patient.Id
+                    &&
+                    (
+                        a.AppointmentDate > today ||
+                        (a.AppointmentDate == today && a.StartTime >= currentTime)
+                    )
+                    &&
+                    (
+                        a.Status == AppointmentStatus.Requested ||
+                        a.Status == AppointmentStatus.Confirmed
+                    ))
+                .OrderBy(a => a.AppointmentDate)
+                .ThenBy(a => a.StartTime)
+                .ToListAsync();
+
+            return View(appointments);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CancelAppointment(int id)
+        {
+            string? userId = _userManager.GetUserId(User);
+
+            var patient = await _context.Patients
+                .FirstOrDefaultAsync(p => p.UserId == userId);
+
+            if (patient == null)
+            {
+                return NotFound("Patient profile not found.");
+            }
+
+            var appointment = await _context.Appointments
+                .FirstOrDefaultAsync(a => a.Id == id && a.PatientId == patient.Id);
+
+            if (appointment == null)
+            {
+                return NotFound("Appointment not found.");
+            }
+
+            if (appointment.Status != AppointmentStatus.Requested &&
+                appointment.Status != AppointmentStatus.Confirmed)
+            {
+                TempData["ErrorMessage"] = "You can only cancel appointments that are requested or confirmed.";
+                return RedirectToAction(nameof(Upcoming));
+            }
+
+            appointment.Status = AppointmentStatus.Cancelled;
+
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Appointment cancelled successfully.";
+            return RedirectToAction(nameof(Upcoming));
         }
 
         public async Task<IActionResult> History()

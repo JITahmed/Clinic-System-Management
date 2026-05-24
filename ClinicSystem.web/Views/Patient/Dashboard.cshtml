@@ -9,6 +9,7 @@
     </div>
 
     <div class="row g-4">
+
         <div class="col-md-4">
             <div class="card h-100 shadow-sm">
                 <div class="card-body">
@@ -16,6 +17,7 @@
                     <p class="card-text">
                         View your personal information, CPR number, and patient reference details.
                     </p>
+
                     <a asp-controller="Patient" asp-action="Profile" class="btn btn-primary">
                         View Profile
                     </a>
@@ -30,8 +32,24 @@
                     <p class="card-text">
                         Select a specialization, doctor, date, and time to request an appointment.
                     </p>
+
                     <a asp-controller="Patient" asp-action="BookAppointment" class="btn btn-success">
                         Book Appointment
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Upcoming Appointments</h5>
+                    <p class="card-text">
+                        View your requested and confirmed future appointments.
+                    </p>
+
+                    <a asp-controller="Patient" asp-action="Upcoming" class="btn btn-warning">
+                        View Upcoming
                     </a>
                 </div>
             </div>
@@ -44,11 +62,13 @@
                     <p class="card-text">
                         View your appointment history, visit records, and prescriptions.
                     </p>
+
                     <a asp-controller="Patient" asp-action="History" class="btn btn-secondary">
                         View History
                     </a>
                 </div>
             </div>
         </div>
+
     </div>
 </div>
