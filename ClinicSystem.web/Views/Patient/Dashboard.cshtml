@@ -1,11 +1,64 @@
 ﻿@{
     ViewData["Title"] = "Patient Dashboard";
+
+    int upcomingCount = ViewBag.UpcomingCount ?? 0;
+    int totalVisits = ViewBag.TotalVisits ?? 0;
+    int unreadNotifications = ViewBag.UnreadNotifications ?? 0;
+    string latestNotificationTitle = ViewBag.LatestNotificationTitle ?? "No recent notifications";
 }
 
 <div class="page-shell">
     <div class="page-header">
         <h2>Patient Dashboard</h2>
         <p>Manage your appointments, profile, and medical history in one place.</p>
+    </div>
+
+    <div class="patient-summary">
+        <div class="row g-3">
+
+            <div class="col-md-4">
+                <div class="summary-item">
+                    <div class="summary-icon icon-orange">
+                        <i class="bi bi-calendar-check-fill"></i>
+                    </div>
+
+                    <div class="summary-content">
+                        <h6>Upcoming Appointments</h6>
+                        <h3>@upcomingCount</h3>
+                        <p>Requested or confirmed appointments</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4 summary-divider">
+                <div class="summary-item">
+                    <div class="summary-icon icon-purple">
+                        <i class="bi bi-clipboard2-pulse-fill"></i>
+                    </div>
+
+                    <div class="summary-content">
+                        <h6>Total Visits</h6>
+                        <h3>@totalVisits</h3>
+                        <p>Completed medical visits</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4 summary-divider">
+                <div class="summary-item">
+                    <div class="summary-icon icon-dark">
+                        <i class="bi bi-bell-fill"></i>
+                    </div>
+
+                    <div class="summary-content">
+                        <h6>Unread Notifications</h6>
+                        <h3>@unreadNotifications</h3>
+                        <p>@latestNotificationTitle</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
     </div>
 
     <div class="row g-4">

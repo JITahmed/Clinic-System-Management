@@ -38,6 +38,7 @@
                                 <th>Time</th>
                                 <th>Reason</th>
                                 <th>Status</th>
+                                <th>Details</th>
                             </tr>
                         </thead>
 
@@ -83,6 +84,22 @@
                                             <span class="badge-soft-info">@appointment.Status</span>
                                         }
                                     </td>
+
+                                    <td>
+                                        @if (appointment.VisitRecord != null)
+                                        {
+                                            <a asp-controller="Patient"
+                                               asp-action="VisitDetails"
+                                               asp-route-id="@appointment.Id"
+                                               class="btn soft-btn btn-soft-primary btn-sm btn-arrow">
+                                                View Details <span>→</span>
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">Not available</span>
+                                        }
+                                    </td>
                                 </tr>
                             }
                         </tbody>
@@ -94,7 +111,7 @@
 
     <div class="section-card">
         <div class="section-card-header">
-            <h5>Visit Records</h5>
+            <h5>Visit Records Summary</h5>
         </div>
 
         <div class="section-card-body">
@@ -110,11 +127,8 @@
                     @foreach (var appointment in completedVisits)
                     {
                         var visit = appointment.VisitRecord;
-                        var visitPrescriptions = prescriptions
-                        .Where(p => p.VisitRecordId == visit!.Id)
-                        .ToList();
 
-                        <div class="col-12">
+                        <div class="col-md-6">
                             <div class="section-card mb-0">
                                 <div class="section-card-header">
                                     <h5>
@@ -123,70 +137,26 @@
                                 </div>
 
                                 <div class="section-card-body">
-                                    <p class="text-muted mb-3">
+                                    <p class="text-muted mb-2">
                                         Doctor: @(appointment.Doctor?.User?.FullName ?? "Doctor")
                                     </p>
 
-                                    <div class="row g-3 mb-4">
-                                        <div class="col-md-4">
-                                            <strong>Doctor Notes</strong>
-                                            <p class="text-muted mb-0">
-                                                @visit!.DoctorNotes
-                                            </p>
-                                        </div>
+                                    <p class="mb-2">
+                                        <strong>Diagnosis:</strong>
+                                        <span class="text-muted">@visit!.Diagnosis</span>
+                                    </p>
 
-                                        <div class="col-md-4">
-                                            <strong>Diagnosis</strong>
-                                            <p class="text-muted mb-0">
-                                                @visit.Diagnosis
-                                            </p>
-                                        </div>
+                                    <p class="mb-3">
+                                        <strong>Treatment:</strong>
+                                        <span class="text-muted">@visit.TreatmentPlan</span>
+                                    </p>
 
-                                        <div class="col-md-4">
-                                            <strong>Treatment Plan</strong>
-                                            <p class="text-muted mb-0">
-                                                @visit.TreatmentPlan
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <h6 class="fw-bold mb-3">Prescriptions</h6>
-
-                                    @if (!visitPrescriptions.Any())
-                                    {
-                                        <div class="empty-state">
-                                            No prescriptions recorded for this visit.
-                                        </div>
-                                    }
-                                    else
-                                    {
-                                        <div class="table-wrap">
-                                            <table class="table table-modern">
-                                                <thead>
-                                                    <tr>
-                                                        <th>Medication</th>
-                                                        <th>Dosage</th>
-                                                        <th>Frequency</th>
-                                                        <th>Duration</th>
-                                                        <th>Instructions</th>
-                                                    </tr>
-                                                </thead>
-
-                                                <tbody>
-                                                    @foreach (var prescription in visitPrescriptions)
-                                                    {
-                                                        <tr>
-                                                            <td>@prescription.MedicationName</td>
-                                                            <td>@prescription.Dosage</td>
-                                                            <td>@prescription.Frequency</td>
-                                                            <td>@prescription.Duration</td>
-                                                            <td>@prescription.Instructions</td>
-                                                        </tr>
-                                                    }
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    }
+                                    <a asp-controller="Patient"
+                                       asp-action="VisitDetails"
+                                       asp-route-id="@appointment.Id"
+                                       class="btn soft-btn btn-soft-primary btn-sm btn-arrow">
+                                        View Full Visit <span>→</span>
+                                    </a>
                                 </div>
                             </div>
                         </div>

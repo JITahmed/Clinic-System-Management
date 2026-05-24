@@ -19,8 +19,50 @@ namespace ClinicSystem.web.Controllers
             _userManager = userManager;
         }
 
-        public IActionResult Dashboard()
+        public async Task<IActionResult> Dashboard()
         {
+            string? userId = _userManager.GetUserId(User);
+
+            var patient = await _context.Patients
+                .FirstOrDefaultAsync(p => p.UserId == userId);
+
+            if (patient == null)
+            {
+                return NotFound("Patient profile not found.");
+            }
+
+            DateTime today = DateTime.Today;
+            TimeSpan currentTime = DateTime.Now.TimeOfDay;
+
+            int upcomingCount = await _context.Appointments
+                .CountAsync(a => a.PatientId == patient.Id
+                    &&
+                    (
+                        a.AppointmentDate > today ||
+                        (a.AppointmentDate == today && a.StartTime >= currentTime)
+                    )
+                    &&
+                    (
+                        a.Status == AppointmentStatus.Requested ||
+                        a.Status == AppointmentStatus.Confirmed
+                    ));
+
+            int totalVisits = await _context.Appointments
+                .CountAsync(a => a.PatientId == patient.Id && a.VisitRecord != null);
+
+            int unreadNotifications = await _context.Notifications
+                .CountAsync(n => n.UserId == userId && !n.IsRead);
+
+            var latestNotification = await _context.Notifications
+                .Where(n => n.UserId == userId)
+                .OrderByDescending(n => n.CreatedAt)
+                .FirstOrDefaultAsync();
+
+            ViewBag.UpcomingCount = upcomingCount;
+            ViewBag.TotalVisits = totalVisits;
+            ViewBag.UnreadNotifications = unreadNotifications;
+            ViewBag.LatestNotificationTitle = latestNotification?.Title ?? "No recent notifications";
+
             return View();
         }
 
@@ -341,7 +383,7 @@ namespace ClinicSystem.web.Controllers
                 return NotFound("Patient profile not found.");
             }
 
-            var allAppointments = await _context.Appointments
+            var appointments = await _context.Appointments
                 .Include(a => a.Doctor)
                     .ThenInclude(d => d.User)
                 .Include(a => a.VisitRecord)
@@ -349,14 +391,6 @@ namespace ClinicSystem.web.Controllers
                 .OrderByDescending(a => a.AppointmentDate)
                 .ThenByDescending(a => a.StartTime)
                 .ToListAsync();
-
-            // Keep only one latest appointment from each status
-            var appointments = allAppointments
-                .GroupBy(a => a.Status)
-                .Select(g => g.First())
-                .OrderByDescending(a => a.AppointmentDate)
-                .ThenByDescending(a => a.StartTime)
-                .ToList();
 
             var visitRecordIds = appointments
                 .Where(a => a.VisitRecord != null)
@@ -423,6 +457,41 @@ namespace ClinicSystem.web.Controllers
 
             TempData["SuccessMessage"] = "All notifications marked as read.";
             return RedirectToAction(nameof(Notifications));
+        }
+
+        public async Task<IActionResult> VisitDetails(int id)
+        {
+            string? userId = _userManager.GetUserId(User);
+
+            var patient = await _context.Patients
+                .FirstOrDefaultAsync(p => p.UserId == userId);
+
+            if (patient == null)
+            {
+                return NotFound("Patient profile not found.");
+            }
+
+            var appointment = await _context.Appointments
+                .Include(a => a.Doctor)
+                    .ThenInclude(d => d.User)
+                .Include(a => a.VisitRecord)
+                .FirstOrDefaultAsync(a =>
+                    a.Id == id &&
+                    a.PatientId == patient.Id &&
+                    a.VisitRecord != null);
+
+            if (appointment == null)
+            {
+                return NotFound("Visit record not found.");
+            }
+
+            var prescriptions = await _context.Prescriptions
+                .Where(p => p.VisitRecordId == appointment.VisitRecord!.Id)
+                .ToListAsync();
+
+            ViewBag.Prescriptions = prescriptions;
+
+            return View(appointment);
         }
 
         private async Task LoadBookingDropdowns()

@@ -325,3 +325,124 @@
 .doctor-info {
     flex: 1;
 }
+
+.stat-card {
+    background: #ffffff;
+    border: 1px solid #e8edf3;
+    border-radius: 18px;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+    padding: 22px;
+    height: 100%;
+}
+
+    .stat-card h6 {
+        color: #64748b;
+        font-size: 0.95rem;
+        margin-bottom: 8px;
+        font-weight: 600;
+    }
+
+    .stat-card h3 {
+        color: #172033;
+        font-size: 2rem;
+        font-weight: 800;
+        margin-bottom: 4px;
+    }
+
+    .stat-card p {
+        color: #6b7280;
+        margin-bottom: 0;
+    }
+
+.stat-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.3rem;
+}
+
+.patient-summary {
+    background: #ffffff;
+    border: 1px solid #e8edf3;
+    border-radius: 20px;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+    padding: 20px 24px;
+    margin-bottom: 28px;
+}
+
+.summary-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    height: 100%;
+}
+
+.summary-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.summary-content h6 {
+    margin: 0;
+    color: #64748b;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.summary-content h3 {
+    margin: 2px 0;
+    color: #111827;
+    font-size: 1.7rem;
+    font-weight: 800;
+}
+
+.summary-content p {
+    margin: 0;
+    color: #6b7280;
+    font-size: 0.9rem;
+}
+
+.summary-divider {
+    border-left: 1px solid #e5e7eb;
+}
+
+@media (max-width: 767px) {
+    .summary-divider {
+        border-left: none;
+        border-top: 1px solid #e5e7eb;
+        padding-top: 16px;
+        margin-top: 16px;
+    }
+}
+
+.patient-nav-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 13px !important;
+    border-radius: 999px;
+    margin: 0 2px;
+    transition: 0.2s ease;
+    font-weight: 500;
+}
+
+    .patient-nav-link:hover {
+        background: rgba(255, 255, 255, 0.14);
+        color: #ffffff !important;
+    }
+
+.navbar-brand {
+    font-weight: 700;
+    letter-spacing: 0.2px;
+}
