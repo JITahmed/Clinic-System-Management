@@ -78,6 +78,13 @@
                         }
                     </ul>
 
+                    @if (User.Identity != null && User.Identity.IsAuthenticated)
+                    {
+                        <a class="nav-link text-white patient-nav-link me-2" asp-controller="Notification" asp-action="Index" title="Notifications">
+                            <i class="bi bi-bell-fill"></i>
+                        </a>
+                    }
+
                     <partial name="_LoginPartial" />
                 </div>
             </div>
