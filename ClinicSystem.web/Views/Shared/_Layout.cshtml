@@ -80,7 +80,7 @@
 
                     @if (User.Identity != null && User.Identity.IsAuthenticated)
                     {
-                        <a class="nav-link text-white patient-nav-link me-2" asp-controller="Notification" asp-action="Index" title="Notifications">
+                        <a class="nav-link text-white patient-nav-link me-2" href="/Patient/Notifications" title="Notifications">
                             <i class="bi bi-bell-fill"></i>
                         </a>
                     }

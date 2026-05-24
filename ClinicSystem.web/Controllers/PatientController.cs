@@ -192,6 +192,7 @@ namespace ClinicSystem.web.Controllers
             return View(doctors);
         }
 
+        [HttpGet]
         public async Task<IActionResult> BookAppointment()
         {
             await LoadBookingDropdowns();
@@ -201,11 +202,11 @@ namespace ClinicSystem.web.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> BookAppointment(
-    int specializationId,
-    int doctorId,
-    DateTime appointmentDate,
-    string reasonForVisit,
-    string? otherReasonForVisit)
+            int specializationId,
+            int doctorId,
+            DateTime appointmentDate,
+            string reasonForVisit,
+            string? otherReasonForVisit)
         {
             string? userId = _userManager.GetUserId(User);
 
