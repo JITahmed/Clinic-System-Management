@@ -3,104 +3,148 @@
 @{
     ViewData["Title"] = "Book Appointment";
 
-    var doctors = ViewBag.Doctors as List<Doctor>;
     var specializations = ViewBag.Specializations as List<Specialization>;
+    var doctors = ViewBag.Doctors as List<Doctor>;
 }
 
-<h2>Book Appointment</h2>
+<div class="page-shell">
+    <div class="page-header">
+        <h2>Book Appointment</h2>
+        <p>Choose a specialization, doctor, appointment date, and reason for your visit.</p>
+    </div>
 
-@if (!ViewData.ModelState.IsValid)
-{
-    <div class="alert alert-danger" asp-validation-summary="All"></div>
-}
+    <div class="form-card">
+        <form asp-controller="Patient" asp-action="BookAppointment" method="post">
+            @Html.AntiForgeryToken()
 
-<form asp-controller="Patient" asp-action="BookAppointment" method="post">
-    @Html.AntiForgeryToken()
-
-    <div class="mb-3">
-        <label class="form-label">Specialization</label>
-        <select id="specializationSelect" name="specializationId" class="form-control" required>
-            <option value="">Select specialization</option>
-
-            @if (specializations != null)
+            @if (ViewData.ModelState.ErrorCount > 0)
             {
-                foreach (var specialization in specializations)
-                {
-                    <option value="@specialization.Id">@specialization.Name</option>
-                }
+                <div asp-validation-summary="All" class="alert alert-danger rounded-3" role="alert"></div>
             }
-        </select>
+
+            <div class="section-card mb-4">
+                <div class="section-card-header">
+                    <h5>Appointment Details</h5>
+                </div>
+
+                <div class="section-card-body">
+                    <div class="row g-3">
+
+                        <div class="col-md-6">
+                            <label class="form-label">Specialization</label>
+                            <select name="specializationId" class="form-select" required>
+                                <option value="">Select specialization</option>
+
+                                @if (specializations != null)
+                                {
+                                    foreach (var specialization in specializations)
+                                    {
+                                        <option value="@specialization.Id">
+                                            @specialization.Name
+                                        </option>
+                                    }
+                                }
+                            </select>
+
+                            <small class="text-muted">Choose the medical area you need.</small>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Doctor</label>
+                            <select name="doctorId" class="form-select" required>
+                                <option value="">Select doctor</option>
+
+                                @if (doctors != null)
+                                {
+                                    foreach (var doctor in doctors)
+                                    {
+                                        var doctorSpecializations = doctor.DoctorSpecializations
+                                        .Where(ds => ds.Specialization != null)
+                                        .Select(ds => ds.Specialization!.Name)
+                                        .ToList();
+
+                                        <option value="@doctor.Id">
+                                            @(doctor.User?.FullName ?? "Doctor")
+                                            @if (doctorSpecializations.Any())
+                                            {
+                                                @: - @string.Join(", ", doctorSpecializations)
+                                            }
+                                        </option>
+                                    }
+                                }
+                            </select>
+
+                            <small class="text-muted">Select an available doctor.</small>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Appointment Date and Time</label>
+                            <input name="appointmentDate" type="datetime-local" class="form-control" required />
+                            <small class="text-muted">Choose a future date and time.</small>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Reason for Visit</label>
+
+                            <select name="reasonForVisit" id="reasonForVisit" class="form-select" required>
+                                <option value="">Select reason</option>
+                                <option value="Fever / Headache">Fever / Headache</option>
+                                <option value="Stomach Pain">Stomach Pain</option>
+                                <option value="Back Pain">Back Pain</option>
+                                <option value="General Consultation">General Consultation</option>
+                                <option value="Other">Other</option>
+                            </select>
+
+                            <small class="text-muted">Select the main reason for your appointment.</small>
+                        </div>
+
+                        <div class="col-md-12" id="otherReasonBox" style="display: none;">
+                            <label class="form-label">Other Reason</label>
+
+                            <textarea name="otherReasonForVisit"
+                                      id="otherReasonForVisit"
+                                      class="form-control"
+                                      rows="3"
+                                      placeholder="Write your reason for visit here..."></textarea>
+
+                            <small class="text-muted">Please describe the reason for your appointment.</small>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn soft-btn btn-soft-success">
+                    Submit Appointment Request
+                </button>
+
+                <a asp-controller="Patient" asp-action="Dashboard" class="btn soft-btn btn-soft-secondary">
+                    Cancel
+                </a>
+            </div>
+        </form>
     </div>
-
-    <div class="mb-3">
-        <label class="form-label">Doctor</label>
-        <select id="doctorSelect" name="doctorId" class="form-control" required>
-            <option value="">Select doctor</option>
-
-            @if (doctors != null)
-            {
-                foreach (var doctor in doctors)
-                {
-                    var doctorName = doctor.User?.FullName ?? doctor.User?.Email ?? doctor.LicenseNumber;
-
-                    var specializationIds = string.Join(",",
-                    doctor.DoctorSpecializations.Select(ds => ds.SpecializationId));
-
-                    <option value="@doctor.Id" data-specializations="@specializationIds">
-                        @doctorName - @doctor.LicenseNumber
-                    </option>
-                }
-            }
-        </select>
-    </div>
-
-    <div class="mb-3">
-        <label class="form-label">Appointment Date and Time</label>
-        <input type="datetime-local"
-               name="appointmentDate"
-               class="form-control"
-               min="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")"
-               required />
-    </div>
-
-    <div class="mb-3">
-        <label class="form-label">Reason for Visit</label>
-        <textarea name="reasonForVisit" class="form-control" rows="4" required></textarea>
-    </div>
-
-    <button type="submit" class="btn btn-success">Submit Appointment Request</button>
-    <a asp-controller="Patient" asp-action="Dashboard" class="btn btn-secondary">Cancel</a>
-</form>
+</div>
 
 @section Scripts {
     <script>
-        const specializationSelect = document.getElementById("specializationSelect");
-        const doctorSelect = document.getElementById("doctorSelect");
+        const reasonDropdown = document.getElementById("reasonForVisit");
+        const otherReasonBox = document.getElementById("otherReasonBox");
+        const otherReasonInput = document.getElementById("otherReasonForVisit");
 
-        function filterDoctorsBySpecialization() {
-            const selectedSpecializationId = specializationSelect.value;
-
-            doctorSelect.value = "";
-
-            Array.from(doctorSelect.options).forEach(option => {
-                if (option.value === "") {
-                    option.hidden = false;
-                    return;
-                }
-
-                const doctorSpecializations = option.getAttribute("data-specializations") || "";
-                const specializationList = doctorSpecializations.split(",");
-
-                if (!selectedSpecializationId || specializationList.includes(selectedSpecializationId)) {
-                    option.hidden = false;
-                } else {
-                    option.hidden = true;
-                }
-            });
+        function toggleOtherReason() {
+            if (reasonDropdown.value === "Other") {
+                otherReasonBox.style.display = "block";
+                otherReasonInput.required = true;
+            } else {
+                otherReasonBox.style.display = "none";
+                otherReasonInput.required = false;
+                otherReasonInput.value = "";
+            }
         }
 
-        specializationSelect.addEventListener("change", filterDoctorsBySpecialization);
-
-        filterDoctorsBySpecialization();
+        reasonDropdown.addEventListener("change", toggleOtherReason);
+        toggleOtherReason();
     </script>
 }

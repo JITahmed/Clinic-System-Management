@@ -40,6 +40,116 @@ namespace ClinicSystem.web.Controllers
             return View(patient);
         }
 
+        [HttpGet]
+        public async Task<IActionResult> EditProfile()
+        {
+            string? userId = _userManager.GetUserId(User);
+
+            var patient = await _context.Patients
+                .Include(p => p.User)
+                .FirstOrDefaultAsync(p => p.UserId == userId);
+
+            if (patient == null)
+            {
+                return NotFound("Patient profile not found.");
+            }
+
+            return View(patient);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditProfile(
+            string CPRNumber,
+            DateTime DateOfBirth,
+            string Gender,
+            string BloodType,
+            string Allergies,
+            string Address,
+            string EmergencyContactName,
+            string EmergencyContactPhone,
+            string PhoneNumber)
+        {
+            string? userId = _userManager.GetUserId(User);
+
+            var patient = await _context.Patients
+                .Include(p => p.User)
+                .FirstOrDefaultAsync(p => p.UserId == userId);
+
+            if (patient == null)
+            {
+                return NotFound("Patient profile not found.");
+            }
+
+            if (string.IsNullOrWhiteSpace(CPRNumber))
+            {
+                ModelState.AddModelError("CPRNumber", "CPR number is required.");
+            }
+
+            if (DateOfBirth == default)
+            {
+                ModelState.AddModelError("DateOfBirth", "Date of birth is required.");
+            }
+
+            if (string.IsNullOrWhiteSpace(Gender))
+            {
+                ModelState.AddModelError("Gender", "Gender is required.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return View(patient);
+            }
+
+            patient.CPRNumber = CPRNumber;
+            patient.DateOfBirth = DateOfBirth;
+            patient.Gender = Gender;
+            patient.BloodType = BloodType ?? string.Empty;
+            patient.Allergies = Allergies ?? string.Empty;
+            patient.Address = Address ?? string.Empty;
+            patient.EmergencyContactName = EmergencyContactName ?? string.Empty;
+            patient.EmergencyContactPhone = EmergencyContactPhone ?? string.Empty;
+
+            if (patient.User != null)
+            {
+                patient.User.PhoneNumber = PhoneNumber ?? string.Empty;
+            }
+
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Profile updated successfully.";
+            return RedirectToAction(nameof(Profile));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> BrowseDoctors(int? specializationId)
+        {
+            var doctorsQuery = _context.Doctors
+                .Include(d => d.User)
+                .Include(d => d.DoctorSpecializations)
+                    .ThenInclude(ds => ds.Specialization)
+                .Where(d => d.IsAvailable)
+                .AsQueryable();
+
+            if (specializationId.HasValue && specializationId.Value > 0)
+            {
+                doctorsQuery = doctorsQuery.Where(d =>
+                    d.DoctorSpecializations.Any(ds => ds.SpecializationId == specializationId.Value));
+            }
+
+            var doctors = await doctorsQuery
+                .OrderBy(d => d.Id)
+                .ToListAsync();
+
+            ViewBag.Specializations = await _context.Specializations
+                .OrderBy(s => s.Name)
+                .ToListAsync();
+
+            ViewBag.SelectedSpecializationId = specializationId ?? 0;
+
+            return View(doctors);
+        }
+
         public async Task<IActionResult> BookAppointment()
         {
             await LoadBookingDropdowns();
@@ -48,7 +158,12 @@ namespace ClinicSystem.web.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> BookAppointment(int specializationId, int doctorId, DateTime appointmentDate, string reasonForVisit)
+        public async Task<IActionResult> BookAppointment(
+    int specializationId,
+    int doctorId,
+    DateTime appointmentDate,
+    string reasonForVisit,
+    string? otherReasonForVisit)
         {
             string? userId = _userManager.GetUserId(User);
 
@@ -65,6 +180,27 @@ namespace ClinicSystem.web.Controllers
                 ModelState.AddModelError("", "Please choose a future appointment date and time.");
                 await LoadBookingDropdowns();
                 return View();
+            }
+
+            if (string.IsNullOrWhiteSpace(reasonForVisit))
+            {
+                ModelState.AddModelError("", "Please select a reason for visit.");
+                await LoadBookingDropdowns();
+                return View();
+            }
+
+            string finalReasonForVisit = reasonForVisit;
+
+            if (reasonForVisit == "Other")
+            {
+                if (string.IsNullOrWhiteSpace(otherReasonForVisit))
+                {
+                    ModelState.AddModelError("", "Please write the reason for your visit.");
+                    await LoadBookingDropdowns();
+                    return View();
+                }
+
+                finalReasonForVisit = otherReasonForVisit.Trim();
             }
 
             bool doctorMatchesSpecialization = await _context.DoctorSpecializations.AnyAsync(ds =>
@@ -108,7 +244,7 @@ namespace ClinicSystem.web.Controllers
                 StartTime = startTime,
                 EndTime = endTime,
                 Status = AppointmentStatus.Requested,
-                ReasonForVisit = reasonForVisit,
+                ReasonForVisit = finalReasonForVisit,
                 CreatedByUserId = userId ?? string.Empty,
                 CreatedAt = DateTime.UtcNow
             };
@@ -205,7 +341,7 @@ namespace ClinicSystem.web.Controllers
                 return NotFound("Patient profile not found.");
             }
 
-            var appointments = await _context.Appointments
+            var allAppointments = await _context.Appointments
                 .Include(a => a.Doctor)
                     .ThenInclude(d => d.User)
                 .Include(a => a.VisitRecord)
@@ -213,6 +349,14 @@ namespace ClinicSystem.web.Controllers
                 .OrderByDescending(a => a.AppointmentDate)
                 .ThenByDescending(a => a.StartTime)
                 .ToListAsync();
+
+            // Keep only one latest appointment from each status
+            var appointments = allAppointments
+                .GroupBy(a => a.Status)
+                .Select(g => g.First())
+                .OrderByDescending(a => a.AppointmentDate)
+                .ThenByDescending(a => a.StartTime)
+                .ToList();
 
             var visitRecordIds = appointments
                 .Where(a => a.VisitRecord != null)
@@ -224,6 +368,61 @@ namespace ClinicSystem.web.Controllers
                 .ToListAsync();
 
             return View(appointments);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Notifications()
+        {
+            string? userId = _userManager.GetUserId(User);
+
+            var notifications = await _context.Notifications
+                .Where(n => n.UserId == userId)
+                .OrderByDescending(n => n.CreatedAt)
+                .ToListAsync();
+
+            return View(notifications);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> MarkNotificationAsRead(int id)
+        {
+            string? userId = _userManager.GetUserId(User);
+
+            var notification = await _context.Notifications
+                .FirstOrDefaultAsync(n => n.Id == id && n.UserId == userId);
+
+            if (notification == null)
+            {
+                return NotFound("Notification not found.");
+            }
+
+            notification.IsRead = true;
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Notification marked as read.";
+            return RedirectToAction(nameof(Notifications));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> MarkAllNotificationsAsRead()
+        {
+            string? userId = _userManager.GetUserId(User);
+
+            var unreadNotifications = await _context.Notifications
+                .Where(n => n.UserId == userId && !n.IsRead)
+                .ToListAsync();
+
+            foreach (var notification in unreadNotifications)
+            {
+                notification.IsRead = true;
+            }
+
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "All notifications marked as read.";
+            return RedirectToAction(nameof(Notifications));
         }
 
         private async Task LoadBookingDropdowns()

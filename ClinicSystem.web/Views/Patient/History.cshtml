@@ -1,67 +1,36 @@
-﻿@model IEnumerable<ClinicSystem.Api.Models.Appointment>
-@using ClinicSystem.Api.Models
+﻿@using ClinicSystem.Api.Models
+@model IEnumerable<ClinicSystem.Api.Models.Appointment>
 
 @{
     ViewData["Title"] = "Appointment History";
 
-    var appointments = Model.ToList();
-
-    var completedVisits = appointments
-        .Where(a => a.VisitRecord != null)
-        .ToList();
-
     var prescriptions = ViewBag.Prescriptions as List<Prescription> ?? new List<Prescription>();
+    var completedVisits = Model.Where(a => a.VisitRecord != null).ToList();
 }
 
-@functions {
-    string GetStatusBadgeClass(object status)
-    {
-        var statusText = status.ToString();
-
-        return statusText switch
-        {
-            "Requested" => "badge bg-warning text-dark",
-            "Confirmed" => "badge bg-primary",
-            "CheckedIn" => "badge bg-info text-dark",
-            "InProgress" => "badge bg-info text-dark",
-            "Completed" => "badge bg-success",
-            "Cancelled" => "badge bg-danger",
-            "Missed" => "badge bg-dark",
-            _ => "badge bg-secondary"
-        };
-    }
-}
-
-<div class="container mt-4">
-    <div class="mb-4">
+<div class="page-shell">
+    <div class="page-header">
         <h2>Appointment History</h2>
-        <p class="text-muted">View your appointments, completed visits, and prescriptions.</p>
+        <p>Review your appointments, completed visits, diagnosis, treatment plans, and prescriptions.</p>
     </div>
 
-    @if (TempData["SuccessMessage"] != null)
-    {
-        <div class="alert alert-success">
-            @TempData["SuccessMessage"]
-        </div>
-    }
-
-    <div class="card shadow-sm mb-4">
-        <div class="card-header">
-            <h5 class="mb-0">Appointments</h5>
+    <div class="section-card">
+        <div class="section-card-header">
+            <h5>Appointments</h5>
         </div>
 
-        <div class="card-body">
-            @if (!appointments.Any())
+        <div class="section-card-body">
+            @if (!Model.Any())
             {
-                <div class="alert alert-info mb-0">
+                <div class="empty-state">
                     You do not have any appointments yet.
                 </div>
             }
             else
             {
-                <div class="table-responsive">
-                    <table class="table table-bordered align-middle">
-                        <thead class="table-light">
+                <div class="table-wrap">
+                    <table class="table table-modern">
+                        <thead>
                             <tr>
                                 <th>Reference Number</th>
                                 <th>Doctor</th>
@@ -71,19 +40,48 @@
                                 <th>Status</th>
                             </tr>
                         </thead>
+
                         <tbody>
-                            @foreach (var appointment in appointments)
+                            @foreach (var appointment in Model)
                             {
                                 <tr>
                                     <td>@appointment.AppointmentReferenceNumber</td>
-                                    <td>@(appointment.Doctor?.User?.FullName ?? appointment.Doctor?.User?.Email ?? appointment.Doctor?.LicenseNumber ?? "N/A")</td>
+
+                                    <td>@(appointment.Doctor?.User?.FullName ?? "Doctor")</td>
+
                                     <td>@appointment.AppointmentDate.ToString("dd/MM/yyyy")</td>
-                                    <td>@appointment.StartTime.ToString(@"hh\:mm") - @appointment.EndTime.ToString(@"hh\:mm")</td>
-                                    <td>@appointment.ReasonForVisit</td>
+
                                     <td>
-                                        <span class="@GetStatusBadgeClass(appointment.Status)">
-                                            @appointment.Status
-                                        </span>
+                                        @appointment.StartTime.ToString(@"hh\:mm") - @appointment.EndTime.ToString(@"hh\:mm")
+                                    </td>
+
+                                    <td>@appointment.ReasonForVisit</td>
+
+                                    <td>
+                                        @if (appointment.Status == AppointmentStatus.Completed)
+                                        {
+                                            <span class="badge-soft-success">Completed</span>
+                                        }
+                                        else if (appointment.Status == AppointmentStatus.Requested)
+                                        {
+                                            <span class="badge-soft-warning">Requested</span>
+                                        }
+                                        else if (appointment.Status == AppointmentStatus.Confirmed)
+                                        {
+                                            <span class="badge-soft-info">Confirmed</span>
+                                        }
+                                        else if (appointment.Status == AppointmentStatus.Cancelled)
+                                        {
+                                            <span class="badge-soft-danger">Cancelled</span>
+                                        }
+                                        else if (appointment.Status == AppointmentStatus.Missed)
+                                        {
+                                            <span class="badge-soft-danger">Missed</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge-soft-info">@appointment.Status</span>
+                                        }
                                     </td>
                                 </tr>
                             }
@@ -94,96 +92,113 @@
         </div>
     </div>
 
-    <div class="card shadow-sm mb-4">
-        <div class="card-header">
-            <h5 class="mb-0">Visit Records</h5>
+    <div class="section-card">
+        <div class="section-card-header">
+            <h5>Visit Records</h5>
         </div>
 
-        <div class="card-body">
+        <div class="section-card-body">
             @if (!completedVisits.Any())
             {
-                <div class="alert alert-info mb-0">
+                <div class="empty-state">
                     No completed visit records are available yet.
                 </div>
             }
             else
             {
-                @foreach (var appointment in completedVisits)
-                {
-                    var visit = appointment.VisitRecord!;
+                <div class="row g-4">
+                    @foreach (var appointment in completedVisits)
+                    {
+                        var visit = appointment.VisitRecord;
+                        var visitPrescriptions = prescriptions
+                        .Where(p => p.VisitRecordId == visit!.Id)
+                        .ToList();
 
-                    var visitPrescriptions = prescriptions
-                    .Where(p => p.VisitRecordId == visit.Id)
-                    .ToList();
+                        <div class="col-12">
+                            <div class="section-card mb-0">
+                                <div class="section-card-header">
+                                    <h5>
+                                        Visit on @appointment.AppointmentDate.ToString("dd/MM/yyyy")
+                                    </h5>
+                                </div>
 
-                    <div class="border rounded p-3 mb-3">
-                        <h5>
-                            Visit on @appointment.AppointmentDate.ToString("dd/MM/yyyy")
-                        </h5>
+                                <div class="section-card-body">
+                                    <p class="text-muted mb-3">
+                                        Doctor: @(appointment.Doctor?.User?.FullName ?? "Doctor")
+                                    </p>
 
-                        <p class="text-muted mb-2">
-                            Doctor:
-                            @(appointment.Doctor?.User?.FullName ?? appointment.Doctor?.User?.Email ?? "Doctor")
-                        </p>
+                                    <div class="row g-3 mb-4">
+                                        <div class="col-md-4">
+                                            <strong>Doctor Notes</strong>
+                                            <p class="text-muted mb-0">
+                                                @visit!.DoctorNotes
+                                            </p>
+                                        </div>
 
-                        <div class="row">
-                            <div class="col-md-4">
-                                <strong>Doctor Notes</strong>
-                                <p>@visit.DoctorNotes</p>
-                            </div>
+                                        <div class="col-md-4">
+                                            <strong>Diagnosis</strong>
+                                            <p class="text-muted mb-0">
+                                                @visit.Diagnosis
+                                            </p>
+                                        </div>
 
-                            <div class="col-md-4">
-                                <strong>Diagnosis</strong>
-                                <p>@visit.Diagnosis</p>
-                            </div>
+                                        <div class="col-md-4">
+                                            <strong>Treatment Plan</strong>
+                                            <p class="text-muted mb-0">
+                                                @visit.TreatmentPlan
+                                            </p>
+                                        </div>
+                                    </div>
 
-                            <div class="col-md-4">
-                                <strong>Treatment Plan</strong>
-                                <p>@visit.TreatmentPlan</p>
+                                    <h6 class="fw-bold mb-3">Prescriptions</h6>
+
+                                    @if (!visitPrescriptions.Any())
+                                    {
+                                        <div class="empty-state">
+                                            No prescriptions recorded for this visit.
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="table-wrap">
+                                            <table class="table table-modern">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Medication</th>
+                                                        <th>Dosage</th>
+                                                        <th>Frequency</th>
+                                                        <th>Duration</th>
+                                                        <th>Instructions</th>
+                                                    </tr>
+                                                </thead>
+
+                                                <tbody>
+                                                    @foreach (var prescription in visitPrescriptions)
+                                                    {
+                                                        <tr>
+                                                            <td>@prescription.MedicationName</td>
+                                                            <td>@prescription.Dosage</td>
+                                                            <td>@prescription.Frequency</td>
+                                                            <td>@prescription.Duration</td>
+                                                            <td>@prescription.Instructions</td>
+                                                        </tr>
+                                                    }
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    }
+                                </div>
                             </div>
                         </div>
-
-                        <h6>Prescriptions</h6>
-
-                        @if (!visitPrescriptions.Any())
-                        {
-                            <p class="text-muted">No prescriptions recorded for this visit.</p>
-                        }
-                        else
-                        {
-                            <div class="table-responsive">
-                                <table class="table table-sm table-bordered">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>Medication</th>
-                                            <th>Dosage</th>
-                                            <th>Frequency</th>
-                                            <th>Duration</th>
-                                            <th>Instructions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach (var prescription in visitPrescriptions)
-                                        {
-                                            <tr>
-                                                <td>@prescription.MedicationName</td>
-                                                <td>@prescription.Dosage</td>
-                                                <td>@prescription.Frequency</td>
-                                                <td>@prescription.Duration</td>
-                                                <td>@prescription.Instructions</td>
-                                            </tr>
-                                        }
-                                    </tbody>
-                                </table>
-                            </div>
-                        }
-                    </div>
-                }
+                    }
+                </div>
             }
         </div>
     </div>
 
-    <a asp-controller="Patient" asp-action="Dashboard" class="btn btn-secondary">
-        Back to Dashboard
-    </a>
+    <div class="mt-4">
+        <a asp-controller="Patient" asp-action="Dashboard" class="btn soft-btn btn-soft-secondary btn-back">
+            <span>←</span> Back to Dashboard
+        </a>
+    </div>
 </div>
