@@ -5,11 +5,11 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Database — uses the same DbContext from the API project
+// Database - uses the same DbContext from the API project
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Identity — same setup as API
+// Identity - same setup as API
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
     options.Password.RequireDigit = true;
@@ -28,8 +28,9 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
 
-// HttpClient — for calling the API, used by public lookup page
+// HttpClient - for calling the API (used by public lookup page)
 builder.Services.AddHttpClient();
+builder.Services.AddScoped<ClinicSystem.Api.Services.NotificationService>();
 
 var app = builder.Build();
 

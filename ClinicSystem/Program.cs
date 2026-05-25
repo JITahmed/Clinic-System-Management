@@ -50,6 +50,7 @@ builder.Services.AddAuthentication(options =>
 });
 
 builder.Services.AddAuthorization();
+builder.Services.AddScoped<ClinicSystem.Api.Services.NotificationService>();
 builder.Services.AddControllers();
 
 //allows MVC and Reporting apps to call the API
