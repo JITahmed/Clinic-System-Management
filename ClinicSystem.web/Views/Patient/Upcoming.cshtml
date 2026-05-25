@@ -1,0 +1,137 @@
+﻿@using ClinicSystem.Api.Models
+@model IEnumerable<ClinicSystem.Api.Models.Appointment>
+
+@{
+    ViewData["Title"] = "Upcoming Appointments";
+}
+
+<div class="page-shell">
+    <div class="page-header">
+        <h2>Upcoming Appointments</h2>
+        <p>View your requested and confirmed future appointments. You can cancel appointments that are still requested or confirmed.</p>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success rounded-3 shadow-sm">
+            @TempData["SuccessMessage"]
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger rounded-3 shadow-sm">
+            @TempData["ErrorMessage"]
+        </div>
+    }
+
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <h5 class="mb-2">No upcoming appointments</h5>
+            <p class="mb-3">You do not have any requested or confirmed future appointments.</p>
+
+            <a asp-controller="Patient" asp-action="BookAppointment" class="btn soft-btn btn-soft-success">
+                Book Appointment
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="section-card">
+            <div class="section-card-header">
+                <h5>Your Upcoming Appointments</h5>
+            </div>
+
+            <div class="section-card-body">
+                <div class="table-wrap">
+                    <table class="table table-modern">
+                        <thead>
+                            <tr>
+                                <th>Reference</th>
+                                <th>Doctor</th>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>Reason</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @foreach (var appointment in Model)
+                            {
+                                <tr>
+                                    <td>@appointment.AppointmentReferenceNumber</td>
+
+                                    <td>
+                                        @(appointment.Doctor?.User?.FullName ?? "Doctor")
+                                    </td>
+
+                                    <td>
+                                        @appointment.AppointmentDate.ToString("dd/MM/yyyy")
+                                    </td>
+
+                                    <td>
+                                        @appointment.StartTime.ToString(@"hh\:mm") - @appointment.EndTime.ToString(@"hh\:mm")
+                                    </td>
+
+                                    <td>
+                                        @appointment.ReasonForVisit
+                                    </td>
+
+                                    <td>
+                                        @if (appointment.Status == AppointmentStatus.Requested)
+                                        {
+                                            <span class="badge-soft-warning">Requested</span>
+                                        }
+                                        else if (appointment.Status == AppointmentStatus.Confirmed)
+                                        {
+                                            <span class="badge-soft-success">Confirmed</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge-soft-info">@appointment.Status</span>
+                                        }
+                                    </td>
+
+                                    <td>
+                                        @if (appointment.Status == AppointmentStatus.Requested ||
+                                                                        appointment.Status == AppointmentStatus.Confirmed)
+                                        {
+                                            <form asp-controller="Patient"
+                                                  asp-action="CancelAppointment"
+                                                  asp-route-id="@appointment.Id"
+                                                  method="post"
+                                                  onsubmit="return confirm('Are you sure you want to cancel this appointment?');">
+                                                @Html.AntiForgeryToken()
+
+                                                <button type="submit" class="btn soft-btn btn-soft-danger btn-sm">
+                                                    Cancel
+                                                </button>
+                                            </form>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">Not available</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="alert alert-info rounded-3 mt-4 mb-0">
+                    You can only cancel appointments with Requested or Confirmed status.
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="mt-4">
+        <a asp-controller="Patient" asp-action="Dashboard" class="btn soft-btn btn-soft-secondary btn-back">
+            <span>←</span> Back to Dashboard
+        </a>
+    </div>
+</div>

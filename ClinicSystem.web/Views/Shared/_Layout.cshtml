@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -8,20 +8,30 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/ClinicSystem.web.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/patient-ui.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 </head>
+
 <body>
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-dark bg-dark border-bottom box-shadow mb-3">
             <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">ClinicSystem.web</a>
+                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">
+                    ClinicSystem.web
+                </a>
+
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
+
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
+                    <ul class="navbar-nav flex-grow-1 align-items-sm-center">
                         <li class="nav-item">
-                            <a class="nav-link text-white" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                            <a class="nav-link text-white patient-nav-link" asp-area="" asp-controller="Home" asp-action="Index">
+                                <i class="bi bi-house-door-fill"></i>
+                                Home
+                            </a>
                         </li>
 
                         @if (User.IsInRole("ClinicManager"))
@@ -29,14 +39,41 @@
                             <li class="nav-item">
                                 <a class="nav-link text-white" asp-controller="ClinicManager" asp-action="Dashboard">Dashboard</a>
                             </li>
+
                             <li class="nav-item">
                                 <a class="nav-link text-white" asp-controller="ClinicManager" asp-action="DoctorList">Doctors</a>
                             </li>
+
                             <li class="nav-item">
                                 <a class="nav-link text-white" asp-controller="ClinicManager" asp-action="SpecializationList">Specializations</a>
                             </li>
+
                             <li class="nav-item">
                                 <a class="nav-link text-white" asp-controller="ClinicManager" asp-action="UserList">Users</a>
+                            </li>
+                        }
+
+                        @if (User.IsInRole("Patient"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-white patient-nav-link" asp-controller="Patient" asp-action="Dashboard">
+                                    <i class="bi bi-grid-fill"></i>
+                                    Dashboard
+                                </a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link text-white patient-nav-link" asp-controller="Patient" asp-action="BrowseDoctors">
+                                    <i class="bi bi-person-vcard-fill"></i>
+                                    Find Doctor
+                                </a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link text-white patient-nav-link" asp-controller="Patient" asp-action="BookAppointment">
+                                    <i class="bi bi-calendar-plus-fill"></i>
+                                    Book Appointment
+                                </a>
                             </li>
                         }
                     </ul>
@@ -56,6 +93,7 @@
             </div>
         </nav>
     </header>
+
     <div class="container">
         <main role="main" class="pb-3">
             @RenderBody()
@@ -67,9 +105,11 @@
             &copy; 2026 - ClinicSystem.web - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
         </div>
     </footer>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

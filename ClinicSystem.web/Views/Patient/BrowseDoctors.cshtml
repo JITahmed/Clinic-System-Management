@@ -1,0 +1,140 @@
+﻿@using ClinicSystem.Api.Models
+@model IEnumerable<ClinicSystem.Api.Models.Doctor>
+
+@{
+    ViewData["Title"] = "Browse Doctors";
+
+    var specializations = ViewBag.Specializations as List<Specialization>;
+    int selectedSpecializationId = ViewBag.SelectedSpecializationId ?? 0;
+}
+
+<div class="page-shell">
+    <div class="page-header">
+        <h2>Browse Doctors</h2>
+        <p>View available doctors and filter them by specialization before booking an appointment.</p>
+    </div>
+
+    <div class="form-card mb-4">
+        <form asp-controller="Patient" asp-action="BrowseDoctors" method="get" class="row g-3">
+            <div class="col-md-8">
+                <label class="form-label">Filter by Specialization</label>
+
+                <select name="specializationId" class="form-select">
+                    @if (selectedSpecializationId == 0)
+                    {
+                        <option value="0" selected>All Specializations</option>
+                    }
+                    else
+                    {
+                        <option value="0">All Specializations</option>
+                    }
+
+                    @if (specializations != null)
+                    {
+                        foreach (var specialization in specializations)
+                        {
+                            if (selectedSpecializationId == specialization.Id)
+                            {
+                                <option value="@specialization.Id" selected>@specialization.Name</option>
+                            }
+                            else
+                            {
+                                <option value="@specialization.Id">@specialization.Name</option>
+                            }
+                        }
+                    }
+                </select>
+            </div>
+
+            <div class="col-md-4 d-flex align-items-end gap-2">
+                <button type="submit" class="btn soft-btn btn-soft-primary">
+                    Filter
+                </button>
+
+                <a asp-controller="Patient" asp-action="BrowseDoctors" class="btn soft-btn btn-soft-secondary">
+                    Clear
+                </a>
+            </div>
+        </form>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            No doctors found for the selected specialization.
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var doctor in Model)
+            {
+                var doctorSpecializations = doctor.DoctorSpecializations
+                .Where(ds => ds.Specialization != null)
+                .Select(ds => ds.Specialization!.Name)
+                .ToList();
+
+                <div class="col-md-6 col-lg-4">
+                    <div class="feature-card">
+                        <div class="doctor-card">
+                            <div class="doctor-avatar">
+                                <i class="bi bi-person-badge-fill"></i>
+                            </div>
+
+                            <div class="doctor-info">
+                                <h5>@(doctor.User?.FullName ?? "Doctor")</h5>
+
+                                <p class="mb-3">
+                                    <strong>Specializations</strong>
+                                    <br />
+
+                                    @if (doctorSpecializations.Any())
+                                    {
+                                        foreach (var specializationName in doctorSpecializations)
+                                        {
+                                            <span class="badge-soft-info me-1 d-inline-block mt-2">
+                                                @specializationName
+                                            </span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">No specialization assigned</span>
+                                    }
+                                </p>
+
+                                <p class="mb-3">
+                                    <strong>Availability</strong>
+                                    <br />
+
+                                    @if (doctor.IsAvailable)
+                                    {
+                                        <span class="badge-soft-success d-inline-block mt-2">
+                                            Available
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-soft-danger d-inline-block mt-2">
+                                            Unavailable
+                                        </span>
+                                    }
+                                </p>
+
+                                <a asp-controller="Patient" asp-action="BookAppointment" class="btn soft-btn btn-soft-success btn-arrow">
+                                    Book Appointment <span>→</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    <div class="mt-4">
+        <a asp-controller="Patient" asp-action="Dashboard" class="btn soft-btn btn-soft-secondary btn-back">
+            <span>←</span> Back to Dashboard
+        </a>
+    </div>
+</div>

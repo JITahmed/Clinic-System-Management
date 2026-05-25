@@ -42,22 +42,28 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+
 app.UseRouting();
+
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
 app.MapRazorPages();
 
-// Seed roles and test users on startup
+// Seed roles, test users, patient profile, and doctor profile on startup
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
+
     var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
     var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
-    await ClinicSystem.Api.Data.DbSeeder.SeedAsync(userManager, roleManager);
+    var context = services.GetRequiredService<ApplicationDbContext>();
+
+    await DbSeeder.SeedAsync(userManager, roleManager, context);
 }
 
 app.Run();

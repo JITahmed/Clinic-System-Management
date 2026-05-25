@@ -1,0 +1,170 @@
+﻿@using ClinicSystem.Api.Models
+@model ClinicSystem.Api.Models.Appointment
+
+@{
+    ViewData["Title"] = "Visit Details";
+
+    var prescriptions = ViewBag.Prescriptions as List<Prescription> ?? new List<Prescription>();
+    var visit = Model.VisitRecord;
+}
+
+<div class="page-shell">
+    <div class="page-header">
+        <h2>Visit Details</h2>
+        <p>Review your completed visit record, diagnosis, treatment plan, and prescriptions.</p>
+    </div>
+
+    <div class="section-card">
+        <div class="section-card-header">
+            <h5>Appointment Information</h5>
+        </div>
+
+        <div class="section-card-body">
+            <table class="table table-bordered info-table">
+                <tr>
+                    <th>Reference Number</th>
+                    <td>@Model.AppointmentReferenceNumber</td>
+                </tr>
+
+                <tr>
+                    <th>Doctor</th>
+                    <td>@(Model.Doctor?.User?.FullName ?? "Doctor")</td>
+                </tr>
+
+                <tr>
+                    <th>Date</th>
+                    <td>@Model.AppointmentDate.ToString("dd/MM/yyyy")</td>
+                </tr>
+
+                <tr>
+                    <th>Time</th>
+                    <td>@Model.StartTime.ToString(@"hh\:mm") - @Model.EndTime.ToString(@"hh\:mm")</td>
+                </tr>
+
+                <tr>
+                    <th>Reason for Visit</th>
+                    <td>@Model.ReasonForVisit</td>
+                </tr>
+
+                <tr>
+                    <th>Status</th>
+                    <td>
+                        <span class="badge-soft-success">@Model.Status</span>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <div class="section-card">
+        <div class="section-card-header">
+            <h5>Medical Notes</h5>
+        </div>
+
+        <div class="section-card-body">
+            @if (visit == null)
+            {
+                <div class="empty-state">
+                    No visit record is available for this appointment.
+                </div>
+            }
+            else
+            {
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <div class="section-card mb-0">
+                            <div class="section-card-header">
+                                <h5>Doctor Notes</h5>
+                            </div>
+
+                            <div class="section-card-body">
+                                <p class="text-muted mb-0">
+                                    @visit.DoctorNotes
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="section-card mb-0">
+                            <div class="section-card-header">
+                                <h5>Diagnosis</h5>
+                            </div>
+
+                            <div class="section-card-body">
+                                <p class="text-muted mb-0">
+                                    @visit.Diagnosis
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="section-card mb-0">
+                            <div class="section-card-header">
+                                <h5>Treatment Plan</h5>
+                            </div>
+
+                            <div class="section-card-body">
+                                <p class="text-muted mb-0">
+                                    @visit.TreatmentPlan
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="section-card">
+        <div class="section-card-header">
+            <h5>Prescriptions</h5>
+        </div>
+
+        <div class="section-card-body">
+            @if (!prescriptions.Any())
+            {
+                <div class="empty-state">
+                    No prescriptions recorded for this visit.
+                </div>
+            }
+            else
+            {
+                <div class="table-wrap">
+                    <table class="table table-modern">
+                        <thead>
+                            <tr>
+                                <th>Medication</th>
+                                <th>Dosage</th>
+                                <th>Frequency</th>
+                                <th>Duration</th>
+                                <th>Instructions</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @foreach (var prescription in prescriptions)
+                            {
+                                <tr>
+                                    <td>@prescription.MedicationName</td>
+                                    <td>@prescription.Dosage</td>
+                                    <td>@prescription.Frequency</td>
+                                    <td>@prescription.Duration</td>
+                                    <td>@prescription.Instructions</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <a asp-controller="Patient" asp-action="History" class="btn soft-btn btn-soft-secondary btn-back">
+            <span>←</span> Back to History
+        </a>
+    </div>
+    </div>
+</div>
