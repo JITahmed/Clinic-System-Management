@@ -55,7 +55,7 @@
                                 <h5 class="mb-1">@notification.Title</h5>
                                 <p class="mb-2 text-muted">@notification.Message</p>
                                 <small class="text-muted">
-                                    @notification.CreatedAt.ToString("dd MMM yyyy - hh:mm tt")
+                                    @notification.CreatedAt.ToLocalTime().ToString("dd MMM yyyy - hh:mm tt")
                                 </small>
                             </div>
 

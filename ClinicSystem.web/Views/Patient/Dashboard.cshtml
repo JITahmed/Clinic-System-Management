@@ -45,17 +45,19 @@
             </div>
 
             <div class="col-md-4 summary-divider">
-                <div class="summary-item">
-                    <div class="summary-icon icon-dark">
-                        <i class="bi bi-bell-fill"></i>
-                    </div>
+                <a asp-controller="Notification" asp-action="Index" class="text-decoration-none text-reset">
+                    <div class="summary-item">
+                        <div class="summary-icon icon-dark">
+                            <i class="bi bi-bell-fill"></i>
+                        </div>
 
-                    <div class="summary-content">
-                        <h6>Unread Notifications</h6>
-                        <h3>@unreadNotifications</h3>
-                        <p>@latestNotificationTitle</p>
+                        <div class="summary-content">
+                            <h6>Unread Notifications</h6>
+                            <h3>@unreadNotifications</h3>
+                            <p>@latestNotificationTitle</p>
+                        </div>
                     </div>
-                </div>
+                </a>
             </div>
 
         </div>
@@ -171,7 +173,7 @@
                     </div>
                 </div>
 
-                <a href="/Patient/Notifications" class="btn soft-btn btn-soft-dark btn-arrow">
+                <a asp-controller="Notification" asp-action="Index" class="btn soft-btn btn-soft-dark btn-arrow">
                     View Notifications <span>→</span>
                 </a>
             </div>
