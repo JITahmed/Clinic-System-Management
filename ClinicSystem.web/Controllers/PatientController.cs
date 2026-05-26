@@ -295,6 +295,14 @@ namespace ClinicSystem.web.Controllers
             _context.Appointments.Add(appointment);
             await _context.SaveChangesAsync();
 
+            await CreatePatientNotificationAsync(
+                userId,
+                "Appointment Request Sent",
+                $"Your appointment request for {appointmentDay:dd MMM yyyy} at {startTime:hh\\:mm} has been submitted successfully.",
+                NotificationType.AppointmentBooked,
+                appointment.Id
+            );
+
             TempData["SuccessMessage"] = "Appointment request submitted successfully.";
             return RedirectToAction(nameof(Upcoming));
         }
@@ -368,6 +376,14 @@ namespace ClinicSystem.web.Controllers
 
             await _context.SaveChangesAsync();
 
+            await CreatePatientNotificationAsync(
+                userId,
+                "Appointment Cancelled",
+                $"Your appointment on {appointment.AppointmentDate:dd MMM yyyy} at {appointment.StartTime:hh\\:mm} has been cancelled.",
+                NotificationType.AppointmentCancelled,
+                appointment.Id
+            );
+
             TempData["SuccessMessage"] = "Appointment cancelled successfully.";
             return RedirectToAction(nameof(Upcoming));
         }
@@ -403,61 +419,6 @@ namespace ClinicSystem.web.Controllers
                 .ToListAsync();
 
             return View(appointments);
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> Notifications()
-        {
-            string? userId = _userManager.GetUserId(User);
-
-            var notifications = await _context.Notifications
-                .Where(n => n.UserId == userId)
-                .OrderByDescending(n => n.CreatedAt)
-                .ToListAsync();
-
-            return View(notifications);
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> MarkNotificationAsRead(int id)
-        {
-            string? userId = _userManager.GetUserId(User);
-
-            var notification = await _context.Notifications
-                .FirstOrDefaultAsync(n => n.Id == id && n.UserId == userId);
-
-            if (notification == null)
-            {
-                return NotFound("Notification not found.");
-            }
-
-            notification.IsRead = true;
-            await _context.SaveChangesAsync();
-
-            TempData["SuccessMessage"] = "Notification marked as read.";
-            return RedirectToAction(nameof(Notifications));
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> MarkAllNotificationsAsRead()
-        {
-            string? userId = _userManager.GetUserId(User);
-
-            var unreadNotifications = await _context.Notifications
-                .Where(n => n.UserId == userId && !n.IsRead)
-                .ToListAsync();
-
-            foreach (var notification in unreadNotifications)
-            {
-                notification.IsRead = true;
-            }
-
-            await _context.SaveChangesAsync();
-
-            TempData["SuccessMessage"] = "All notifications marked as read.";
-            return RedirectToAction(nameof(Notifications));
         }
 
         public async Task<IActionResult> VisitDetails(int id)
@@ -508,6 +469,33 @@ namespace ClinicSystem.web.Controllers
             ViewBag.Specializations = await _context.Specializations
                 .OrderBy(s => s.Name)
                 .ToListAsync();
+        }
+
+        private async Task CreatePatientNotificationAsync(
+            string? userId,
+            string title,
+            string message,
+            NotificationType type,
+            int? relatedEntityId = null)
+        {
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return;
+            }
+
+            var notification = new Notification
+            {
+                UserId = userId,
+                Title = title,
+                Message = message,
+                Type = type,
+                IsRead = false,
+                RelatedEntityId = relatedEntityId,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.Notifications.Add(notification);
+            await _context.SaveChangesAsync();
         }
     }
 }
