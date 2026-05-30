@@ -1,0 +1,47 @@
+﻿@model IEnumerable<ClinicSystem.Api.Models.Notification>
+@{
+    ViewData["Title"] = "Notifications";
+}
+
+<div class="container mt-4">
+    <h2>🔔 Notifications</h2>
+    <hr />
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info">You have no notifications.</div>
+    }
+    else
+    {
+        <div class="list-group">
+            @foreach (var n in Model)
+            {
+                var bgClass = n.IsRead ? "list-group-item-light" : "list-group-item-primary";
+                var icon = n.Type switch
+                {
+                    ClinicSystem.Api.Models.NotificationType.AppointmentBooked => "📅",
+                    ClinicSystem.Api.Models.NotificationType.AppointmentConfirmed => "✅",
+                    ClinicSystem.Api.Models.NotificationType.AppointmentCancelled => "❌",
+                    ClinicSystem.Api.Models.NotificationType.AppointmentCheckedIn => "🏥",
+                    ClinicSystem.Api.Models.NotificationType.AppointmentCompleted => "🎉",
+                    ClinicSystem.Api.Models.NotificationType.AppointmentMissed => "⚠️",
+                    _ => "🔔"
+                };
+
+                <div class="list-group-item @bgClass">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <strong>@icon @n.Title</strong>
+                            @if (!n.IsRead)
+                            {
+                                <span class="badge bg-danger ms-2">New</span>
+                            }
+                            <p class="mb-1 mt-1">@n.Message</p>
+                            <small class="text-muted">@n.CreatedAt.ToString("dd MMM yyyy, hh:mm tt")</small>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

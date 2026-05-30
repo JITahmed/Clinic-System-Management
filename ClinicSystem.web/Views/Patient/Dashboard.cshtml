@@ -1,0 +1,183 @@
+﻿@{
+    ViewData["Title"] = "Patient Dashboard";
+
+    int upcomingCount = ViewBag.UpcomingCount ?? 0;
+    int totalVisits = ViewBag.TotalVisits ?? 0;
+    int unreadNotifications = ViewBag.UnreadNotifications ?? 0;
+    string latestNotificationTitle = ViewBag.LatestNotificationTitle ?? "No recent notifications";
+}
+
+<div class="page-shell">
+    <div class="page-header">
+        <h2>Patient Dashboard</h2>
+        <p>Manage your appointments, profile, and medical history in one place.</p>
+    </div>
+
+    <div class="patient-summary">
+        <div class="row g-3">
+
+            <div class="col-md-4">
+                <div class="summary-item">
+                    <div class="summary-icon icon-orange">
+                        <i class="bi bi-calendar-check-fill"></i>
+                    </div>
+
+                    <div class="summary-content">
+                        <h6>Upcoming Appointments</h6>
+                        <h3>@upcomingCount</h3>
+                        <p>Requested or confirmed appointments</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4 summary-divider">
+                <div class="summary-item">
+                    <div class="summary-icon icon-purple">
+                        <i class="bi bi-clipboard2-pulse-fill"></i>
+                    </div>
+
+                    <div class="summary-content">
+                        <h6>Total Visits</h6>
+                        <h3>@totalVisits</h3>
+                        <p>Completed medical visits</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4 summary-divider">
+                <a asp-controller="Notification" asp-action="Index" class="text-decoration-none text-reset">
+                    <div class="summary-item">
+                        <div class="summary-icon icon-dark">
+                            <i class="bi bi-bell-fill"></i>
+                        </div>
+
+                        <div class="summary-content">
+                            <h6>Unread Notifications</h6>
+                            <h3>@unreadNotifications</h3>
+                            <p>@latestNotificationTitle</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="row g-4">
+
+        <div class="col-md-6 col-lg-4">
+            <div class="feature-card">
+                <div class="feature-head">
+                    <div class="feature-icon icon-blue">
+                        <i class="bi bi-person-fill"></i>
+                    </div>
+
+                    <div class="feature-text">
+                        <h5>My Profile</h5>
+                        <p>View and edit your personal information, CPR number, phone number, and emergency contact details.</p>
+                    </div>
+                </div>
+
+                <a asp-controller="Patient" asp-action="Profile" class="btn soft-btn btn-soft-primary btn-arrow">
+                    View Profile <span>→</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-4">
+            <div class="feature-card">
+                <div class="feature-head">
+                    <div class="feature-icon icon-teal">
+                        <i class="bi bi-person-vcard-fill"></i>
+                    </div>
+
+                    <div class="feature-text">
+                        <h5>Browse Doctors</h5>
+                        <p>Explore available doctors and filter them by specialization before booking an appointment.</p>
+                    </div>
+                </div>
+
+                <a asp-controller="Patient" asp-action="BrowseDoctors" class="btn soft-btn btn-soft-info btn-arrow">
+                    Browse Doctors <span>→</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-4">
+            <div class="feature-card">
+                <div class="feature-head">
+                    <div class="feature-icon icon-green">
+                        <i class="bi bi-calendar-plus-fill"></i>
+                    </div>
+
+                    <div class="feature-text">
+                        <h5>Book Appointment</h5>
+                        <p>Select a specialization, choose a doctor, and submit a new appointment request easily.</p>
+                    </div>
+                </div>
+
+                <a asp-controller="Patient" asp-action="BookAppointment" class="btn soft-btn btn-soft-success btn-arrow">
+                    Book Appointment <span>→</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-4">
+            <div class="feature-card">
+                <div class="feature-head">
+                    <div class="feature-icon icon-orange">
+                        <i class="bi bi-calendar-check-fill"></i>
+                    </div>
+
+                    <div class="feature-text">
+                        <h5>Upcoming Appointments</h5>
+                        <p>See your requested and confirmed future appointments and manage them when needed.</p>
+                    </div>
+                </div>
+
+                <a asp-controller="Patient" asp-action="Upcoming" class="btn soft-btn btn-soft-warning btn-arrow">
+                    View Upcoming <span>→</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-4">
+            <div class="feature-card">
+                <div class="feature-head">
+                    <div class="feature-icon icon-purple">
+                        <i class="bi bi-clipboard2-pulse-fill"></i>
+                    </div>
+
+                    <div class="feature-text">
+                        <h5>Appointment History</h5>
+                        <p>Review past appointments, visit records, diagnoses, treatment plans, and prescriptions.</p>
+                    </div>
+                </div>
+
+                <a asp-controller="Patient" asp-action="History" class="btn soft-btn btn-soft-secondary btn-arrow">
+                    View History <span>→</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-4">
+            <div class="feature-card">
+                <div class="feature-head">
+                    <div class="feature-icon icon-dark">
+                        <i class="bi bi-bell-fill"></i>
+                    </div>
+
+                    <div class="feature-text">
+                        <h5>Notifications</h5>
+                        <p>View appointment notifications and mark them as read to stay updated with your clinic activity.</p>
+                    </div>
+                </div>
+
+                <a asp-controller="Notification" asp-action="Index" class="btn soft-btn btn-soft-dark btn-arrow">
+                    View Notifications <span>→</span>
+                </a>
+            </div>
+        </div>
+
+    </div>
+</div>

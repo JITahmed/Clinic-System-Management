@@ -1,0 +1,174 @@
+﻿@using ClinicSystem.Api.Models
+@model IEnumerable<ClinicSystem.Api.Models.Appointment>
+
+@{
+    ViewData["Title"] = "Appointment History";
+
+    var prescriptions = ViewBag.Prescriptions as List<Prescription> ?? new List<Prescription>();
+    var completedVisits = Model.Where(a => a.VisitRecord != null).ToList();
+}
+
+<div class="page-shell">
+    <div class="page-header">
+        <h2>Appointment History</h2>
+        <p>Review your appointments, completed visits, diagnosis, treatment plans, and prescriptions.</p>
+    </div>
+
+    <div class="section-card">
+        <div class="section-card-header">
+            <h5>Appointments</h5>
+        </div>
+
+        <div class="section-card-body">
+            @if (!Model.Any())
+            {
+                <div class="empty-state">
+                    You do not have any appointments yet.
+                </div>
+            }
+            else
+            {
+                <div class="table-wrap">
+                    <table class="table table-modern">
+                        <thead>
+                            <tr>
+                                <th>Reference Number</th>
+                                <th>Doctor</th>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>Reason</th>
+                                <th>Status</th>
+                                <th>Details</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @foreach (var appointment in Model)
+                            {
+                                <tr>
+                                    <td>@appointment.AppointmentReferenceNumber</td>
+
+                                    <td>@(appointment.Doctor?.User?.FullName ?? "Doctor")</td>
+
+                                    <td>@appointment.AppointmentDate.ToString("dd/MM/yyyy")</td>
+
+                                    <td>
+                                        @appointment.StartTime.ToString(@"hh\:mm") - @appointment.EndTime.ToString(@"hh\:mm")
+                                    </td>
+
+                                    <td>@appointment.ReasonForVisit</td>
+
+                                    <td>
+                                        @if (appointment.Status == AppointmentStatus.Completed)
+                                        {
+                                            <span class="badge-soft-success">Completed</span>
+                                        }
+                                        else if (appointment.Status == AppointmentStatus.Requested)
+                                        {
+                                            <span class="badge-soft-warning">Requested</span>
+                                        }
+                                        else if (appointment.Status == AppointmentStatus.Confirmed)
+                                        {
+                                            <span class="badge-soft-info">Confirmed</span>
+                                        }
+                                        else if (appointment.Status == AppointmentStatus.Cancelled)
+                                        {
+                                            <span class="badge-soft-danger">Cancelled</span>
+                                        }
+                                        else if (appointment.Status == AppointmentStatus.Missed)
+                                        {
+                                            <span class="badge-soft-danger">Missed</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge-soft-info">@appointment.Status</span>
+                                        }
+                                    </td>
+
+                                    <td>
+                                        @if (appointment.VisitRecord != null)
+                                        {
+                                            <a asp-controller="Patient"
+                                               asp-action="VisitDetails"
+                                               asp-route-id="@appointment.Id"
+                                               class="btn soft-btn btn-soft-primary btn-sm btn-arrow">
+                                                View Details <span>→</span>
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">Not available</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="section-card">
+        <div class="section-card-header">
+            <h5>Visit Records Summary</h5>
+        </div>
+
+        <div class="section-card-body">
+            @if (!completedVisits.Any())
+            {
+                <div class="empty-state">
+                    No completed visit records are available yet.
+                </div>
+            }
+            else
+            {
+                <div class="row g-4">
+                    @foreach (var appointment in completedVisits)
+                    {
+                        var visit = appointment.VisitRecord;
+
+                        <div class="col-md-6">
+                            <div class="section-card mb-0">
+                                <div class="section-card-header">
+                                    <h5>
+                                        Visit on @appointment.AppointmentDate.ToString("dd/MM/yyyy")
+                                    </h5>
+                                </div>
+
+                                <div class="section-card-body">
+                                    <p class="text-muted mb-2">
+                                        Doctor: @(appointment.Doctor?.User?.FullName ?? "Doctor")
+                                    </p>
+
+                                    <p class="mb-2">
+                                        <strong>Diagnosis:</strong>
+                                        <span class="text-muted">@visit!.Diagnosis</span>
+                                    </p>
+
+                                    <p class="mb-3">
+                                        <strong>Treatment:</strong>
+                                        <span class="text-muted">@visit.TreatmentPlan</span>
+                                    </p>
+
+                                    <a asp-controller="Patient"
+                                       asp-action="VisitDetails"
+                                       asp-route-id="@appointment.Id"
+                                       class="btn soft-btn btn-soft-primary btn-sm btn-arrow">
+                                        View Full Visit <span>→</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <a asp-controller="Patient" asp-action="Dashboard" class="btn soft-btn btn-soft-secondary btn-back">
+            <span>←</span> Back to Dashboard
+        </a>
+    </div>
+</div>

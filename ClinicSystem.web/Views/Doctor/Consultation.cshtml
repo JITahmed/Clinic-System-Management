@@ -1,0 +1,117 @@
+@model ClinicSystem.web.Models.ConsultationViewModel
+@{
+    ViewData["Title"] = "Consultation";
+    int age = DateTime.Today.Year - Model.PatientDateOfBirth.Year;
+    if (Model.PatientDateOfBirth.Date > DateTime.Today.AddYears(-age)) age--;
+}
+
+<div class="container mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">Consultation Room</h5>
+        <a asp-action="Dashboard" class="btn btn-outline-secondary btn-sm">← Back</a>
+    </div>
+
+    <div class="card mb-3 border-start border-primary border-4">
+        <div class="card-body py-2">
+            <div class="row align-items-center">
+                <div class="col-md-4">
+                    <strong>@Model.PatientName</strong>
+                    <span class="text-muted ms-2">@age yrs &bull; @Model.BloodType</span>
+                </div>
+                <div class="col-md-4">
+                    <span class="text-muted">Reason: </span>@Model.ReasonForVisit
+                </div>
+                <div class="col-md-4">
+                    @if (!string.IsNullOrWhiteSpace(Model.Allergies))
+                    {
+                        <span class="badge bg-danger">⚠ Allergies: @Model.Allergies</span>
+                    }
+                    else
+                    {
+                        <span class="text-muted small">No known allergies</span>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form asp-action="SaveConsultation" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="AppointmentId" />
+        <input type="hidden" asp-for="PatientId" />
+        <input type="hidden" asp-for="PatientName" />
+        <input type="hidden" asp-for="ReasonForVisit" />
+        <input type="hidden" asp-for="PatientDateOfBirth" />
+        <input type="hidden" asp-for="BloodType" />
+        <input type="hidden" asp-for="Allergies" />
+
+        <div class="card mb-3 shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h6 class="mb-0">Clinical Notes</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">Symptoms &amp; Observations <span class="text-danger">*</span></label>
+                    <textarea asp-for="Symptoms" class="form-control" rows="4"
+                              placeholder="Describe presenting symptoms and clinical observations..."></textarea>
+                    <span asp-validation-for="Symptoms" class="text-danger small"></span>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Diagnosis <span class="text-danger">*</span></label>
+                    <input type="text" asp-for="DiagnosisText" class="form-control"
+                           placeholder="e.g., Acute Pharyngitis" />
+                    <span asp-validation-for="DiagnosisText" class="text-danger small"></span>
+                </div>
+                <div class="mb-0">
+                    <label class="form-label">Treatment Plan</label>
+                    <textarea asp-for="TreatmentPlan" class="form-control" rows="3"
+                              placeholder="Rest, follow-up instructions, referrals..."></textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-3 shadow-sm">
+            <div class="card-header">
+                <h6 class="mb-0">Prescription <span class="text-muted fw-normal">(optional)</span></h6>
+            </div>
+            <div class="card-body">
+                <div class="row g-2">
+                    <div class="col-md-6">
+                        <label class="form-label">Medication Name</label>
+                        <input type="text" asp-for="MedicationName" class="form-control"
+                               placeholder="e.g., Amoxicillin" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Dosage</label>
+                        <input type="text" asp-for="Dosage" class="form-control"
+                               placeholder="e.g., 500mg" />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Frequency</label>
+                        <input type="text" asp-for="Frequency" class="form-control"
+                               placeholder="e.g., Twice daily" />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Duration</label>
+                        <input type="text" asp-for="Duration" class="form-control"
+                               placeholder="e.g., 7 days" />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Special Instructions</label>
+                        <input type="text" asp-for="Instructions" class="form-control"
+                               placeholder="e.g., Take with food" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-between mb-5">
+            <a asp-action="Dashboard" class="btn btn-outline-danger">Cancel</a>
+            <button type="submit" class="btn btn-success px-5">Save &amp; Complete Visit</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

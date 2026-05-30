@@ -1,0 +1,99 @@
+@model ClinicSystem.Api.Models.VisitRecord
+@{
+    ViewData["Title"] = "Prescriptions";
+    var patientName = Model.Appointment.Patient.User.FullName;
+}
+
+<div class="container mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">Prescriptions — @patientName</h5>
+        <a asp-action="PatientHistory" asp-route-id="@Model.Appointment.PatientId"
+           class="btn btn-outline-secondary btn-sm">← Back to History</a>
+    </div>
+
+    <p class="text-muted small">
+        Visit on @Model.VisitDate.ToString("MMMM dd, yyyy") &bull; Diagnosis: @Model.Diagnosis
+    </p>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (!Model.Prescriptions.Any())
+    {
+        <p class="text-muted">No prescriptions recorded for this visit.</p>
+    }
+    else
+    {
+        <div class="table-responsive mb-4">
+            <table class="table table-bordered align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Medication</th>
+                        <th>Dosage</th>
+                        <th>Frequency</th>
+                        <th>Duration</th>
+                        <th>Instructions</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var rx in Model.Prescriptions)
+                    {
+                        <tr>
+                            <td><strong>@rx.MedicationName</strong></td>
+                            <td>@rx.Dosage</td>
+                            <td>@rx.Frequency</td>
+                            <td>@rx.Duration</td>
+                            <td>@(string.IsNullOrEmpty(rx.Instructions) ? "—" : rx.Instructions)</td>
+                            <td>
+                                <form asp-action="DeletePrescription" method="post"
+                                      onsubmit="return confirm('Remove this prescription?')">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="prescriptionId" value="@rx.Id" />
+                                    <input type="hidden" name="visitRecordId" value="@Model.Id" />
+                                    <button class="btn btn-outline-danger btn-sm">Remove</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    <div class="card shadow-sm">
+        <div class="card-header"><h6 class="mb-0">Add Prescription</h6></div>
+        <div class="card-body">
+            <form asp-action="AddPrescription" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="visitRecordId" value="@Model.Id" />
+                <div class="row g-2">
+                    <div class="col-md-4">
+                        <input type="text" name="medicationName" class="form-control"
+                               placeholder="Medication *" required />
+                    </div>
+                    <div class="col-md-2">
+                        <input type="text" name="dosage" class="form-control" placeholder="Dosage" />
+                    </div>
+                    <div class="col-md-2">
+                        <input type="text" name="frequency" class="form-control" placeholder="Frequency" />
+                    </div>
+                    <div class="col-md-2">
+                        <input type="text" name="duration" class="form-control" placeholder="Duration" />
+                    </div>
+                    <div class="col-md-2">
+                        <input type="text" name="instructions" class="form-control" placeholder="Instructions" />
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <button type="submit" class="btn btn-primary btn-sm">Add Prescription</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
