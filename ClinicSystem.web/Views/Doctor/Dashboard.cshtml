@@ -1,0 +1,158 @@
+@model IEnumerable<ClinicSystem.Api.Models.Appointment>
+@{
+    ViewData["Title"] = "Doctor Dashboard";
+    var doctor = ViewBag.Doctor as ClinicSystem.Api.Models.Doctor;
+    int unread = ViewBag.UnreadCount ?? 0;
+}
+
+<div class="container-fluid mt-3">
+    <div class="row mb-3 align-items-center">
+        <div class="col">
+            <h4 class="mb-0">Dr. @doctor?.User?.FullName</h4>
+            <small class="text-muted">@DateTime.Now.ToString("dddd, MMMM dd, yyyy")</small>
+        </div>
+        <div class="col-auto d-flex gap-2">
+            <a asp-action="UpcomingAppointments" class="btn btn-outline-primary btn-sm">Upcoming</a>
+            <a asp-action="MySchedule" class="btn btn-outline-secondary btn-sm">My Schedule</a>
+            <a asp-action="Notifications" class="btn btn-outline-dark btn-sm position-relative">
+                Notifications
+                @if (unread > 0)
+                {
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">@unread</span>
+                }
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="card text-center border-0 bg-light">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-primary">@Model.Count()</div>
+                    <small class="text-muted">Total Today</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card text-center border-0 bg-light">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-warning">@Model.Count(a => a.Status == ClinicSystem.Api.Models.AppointmentStatus.CheckedIn)</div>
+                    <small class="text-muted">Checked In</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card text-center border-0 bg-light">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-success">@Model.Count(a => a.Status == ClinicSystem.Api.Models.AppointmentStatus.Completed)</div>
+                    <small class="text-muted">Completed</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card text-center border-0 bg-light">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-info">@Model.Count(a => a.Status == ClinicSystem.Api.Models.AppointmentStatus.Confirmed)</div>
+                    <small class="text-muted">Confirmed</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header">
+            <h6 class="mb-0">Today's Appointments</h6>
+        </div>
+        <div class="card-body p-0">
+            @if (!Model.Any())
+            {
+                <div class="text-center py-5 text-muted">
+                    <p class="mb-0">No appointments scheduled for today.</p>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Time</th>
+                                <th>Patient</th>
+                                <th>Reason</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var appt in Model)
+                            {
+                                <tr>
+                                    <td class="text-nowrap">
+                                        @appt.StartTime.ToString(@"hh\:mm") – @appt.EndTime.ToString(@"hh\:mm")
+                                    </td>
+                                    <td><strong>@appt.Patient.User.FullName</strong></td>
+                                    <td>@appt.ReasonForVisit</td>
+                                    <td>
+                                        @switch (appt.Status)
+                                        {
+                                            case ClinicSystem.Api.Models.AppointmentStatus.CheckedIn:
+                                                <span class="badge bg-warning text-dark">Checked In</span>
+                                                break;
+                                            case ClinicSystem.Api.Models.AppointmentStatus.InProgress:
+                                                <span class="badge bg-primary">In Progress</span>
+                                                break;
+                                            case ClinicSystem.Api.Models.AppointmentStatus.Completed:
+                                                <span class="badge bg-success">Completed</span>
+                                                break;
+                                            case ClinicSystem.Api.Models.AppointmentStatus.Confirmed:
+                                                <span class="badge bg-info text-dark">Confirmed</span>
+                                                break;
+                                            case ClinicSystem.Api.Models.AppointmentStatus.Cancelled:
+                                                <span class="badge bg-danger">Cancelled</span>
+                                                break;
+                                            default:
+                                                <span class="badge bg-secondary">@appt.Status</span>
+                                                break;
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (appt.Status == ClinicSystem.Api.Models.AppointmentStatus.CheckedIn ||
+                                             appt.Status == ClinicSystem.Api.Models.AppointmentStatus.InProgress)
+                                        {
+                                            <a asp-action="Consultation" asp-route-id="@appt.Id"
+                                               class="btn btn-primary btn-sm">Start</a>
+                                        }
+                                        else if (appt.Status == ClinicSystem.Api.Models.AppointmentStatus.Completed)
+                                        {
+                                            <a asp-action="PatientHistory" asp-route-id="@appt.PatientId"
+                                               class="btn btn-outline-secondary btn-sm">History</a>
+                                        }
+                                        else
+                                        {
+                                            <button class="btn btn-light btn-sm" disabled>Waiting</button>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>
