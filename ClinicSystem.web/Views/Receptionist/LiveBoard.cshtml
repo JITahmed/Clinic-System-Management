@@ -1,0 +1,194 @@
+@model IEnumerable<ClinicSystem.Api.Models.Appointment>
+@{
+    ViewData["Title"] = "Live Appointment Board";
+    // the boardis fullu screened so no navbar is needed
+    Layout = null; 
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Live Appointment Board</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <style>
+        body { background: #0d1117; color: #e6edf3; font-family: 'Segoe UI', sans-serif; }
+        .board-header { background: #161b22; padding: 1rem 2rem; border-bottom: 2px solid #21262d; }
+        .board-header h1 { font-size: 1.5rem; margin: 0; }
+        .status-badge { font-size: 0.75rem; font-weight: 600; padding: 0.3em 0.7em; border-radius: 1rem; }
+        .appt-row { transition: background 0.5s; }
+        .appt-row.flash { background: #1f6feb44 !important; }
+        .clock { font-size: 1.1rem; color: #58a6ff; }
+        #connectionStatus { font-size: 0.8rem; }
+        .connected { color: #3fb950; }
+        .disconnected { color: #f85149; }
+        table thead th { background: #161b22; border-color: #30363d; }
+        table tbody tr { border-color: #21262d; }
+        table tbody td { vertical-align: middle; }
+        .legend span { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 4px; }
+    </style>
+</head>
+<body>
+    <div class="board-header d-flex justify-content-between align-items-center">
+        <div>
+            <h1>Live Appointment Board</h1>
+            <small>@DateTime.Today.ToString("dddd, dd MMMM yyyy")</small>
+        </div>
+        <div class="text-end">
+            <div class="clock" id="clock"></div>
+            <div id="connectionStatus" class="disconnected">Connecting...</div>
+        </div>
+    </div>
+
+    <div class="px-3 py-2 d-flex gap-3 flex-wrap legend" style="background:#161b22; border-bottom:1px solid #21262d;">
+        <span><span style="background:#ffc107"></span>Requested</span>
+        <span><span style="background:#0dcaf0"></span>Confirmed</span>
+        <span><span style="background:#0d6efd"></span>Checked In</span>
+        <span><span style="background:#198754"></span>In Progress</span>
+        <span><span style="background:#6c757d"></span>Completed</span>
+        <span><span style="background:#dc3545"></span>Cancelled</span>
+        <span><span style="background:#212529"></span>Missed</span>
+    </div>
+
+    <div class="p-3">
+        <table class="table table-dark table-bordered" id="boardTable">
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Reference</th>
+                    <th>Patient</th>
+                    <th>Doctor</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="appointmentBody">
+                @foreach (var appt in Model)
+                {
+                    <tr id="appt-@appt.Id" class="appt-row">
+                        <td>@appt.StartTime.ToString(@"hh\:mm")</td>
+                        <td><code>@appt.AppointmentReferenceNumber</code></td>
+                        <td>@appt.Patient.User.FullName</td>
+                        <td>Dr. @appt.Doctor.User.FullName</td>
+                        <td><span class="status-badge @StatusBadge(appt.Status)">@appt.Status</span></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        @if (!Model.Any())
+        {
+            <p class="text-center text-muted mt-5">No appointments for today</p>
+        }
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.0/signalr.min.js"></script>
+    <script>
+        // added a clock integrated into the dashboard to make it easier when fully screened
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clock').textContent =
+                now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // a helper to get the right badge color for each status
+        function badgeClass(status) {
+            const map = {
+                'Requested': 'bg-warning text-dark',
+                'Confirmed': 'bg-info text-dark',
+                'CheckedIn': 'bg-primary',
+                'InProgress': 'bg-success',
+                'Completed': 'bg-secondary',
+                'Cancelled': 'bg-danger',
+                'Missed': 'bg-dark'
+            };
+            return map[status] || 'bg-light text-dark';
+        }
+
+        // connection to the appointment hub using signallR
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/appointmentHub")
+            .withAutomaticReconnect()
+            .build();
+
+        connection.on("AppointmentUpdated", (appt) => {
+            // check if this appointment is already on our board
+            const existingRow = document.getElementById(`appt-${appt.id}`);
+            console.log(`Received update for appointment ID: ${appt.id}. Status: ${appt.status}`);
+
+            const timeStr = appt.startTime;
+            const badgeCls = badgeClass(appt.status);
+
+            if (existingRow) {
+                console.log(`Updating existing appointment ${appt.appointmentReferenceNumber} to the status ${appt.status}`);
+                existingRow.cells[4].innerHTML = `<span class="status-badge ${badgeCls}">${appt.status}</span>`;
+
+                // Flash effect (picked up the idea from Riddit Lol)
+                existingRow.classList.add('flash');
+                setTimeout(() => existingRow.classList.remove("flash"), 1500);
+            } else {
+                console.log(`New appointment ${appt.appointmentReferenceNumber} received`);
+                // adding a row for the new appointment
+                const tbody = document.getElementById('appointmentBody');
+                const tr = document.createElement('tr');
+                tr.id = `appt-${appt.id}`;
+                tr.className = 'appt-row flash';
+                tr.innerHTML = `
+                    <td>${timeStr}</td>
+                    <td><code>${appt.appointmentReferenceNumber}</code></td>
+                    <td>${appt.patientName}</td>
+                    <td>Dr. ${appt.doctorName}</td>
+                    <td><span class="status-badge ${badgeCls}">${appt.status}</span></td>
+                `;
+                tbody.appendChild(tr);
+                // another little flash effect 
+                setTimeout(() => tr.classList.remove("flash"), 1500); 
+            }
+        });
+
+        async function startConnection() {
+            try {
+                console.log("Attempting to start connection...");
+                await connection.start();
+                document.getElementById("connectionStatus").textContent = "Live";
+                console.log("SignalR: Connection established!");
+                document.getElementById('connectionStatus').className = 'connected';
+            } catch (err) {
+                document.getElementById("connectionStatus").textContent = "Disconnected";
+                console.error("Connection failed. Retrying in 5 seconds...", err);
+                // after 5 sec retrying to run the startConnection again
+                setTimeout(startConnection, 5000);
+            }
+        }
+
+        connection.onreconnecting(() => {
+            document.getElementById("connectionStatus").textContent = "Reconnecting...";
+            console.warn("SignalR: Reconnecting...");
+            document.getElementById('connectionStatus').className = 'disconnected';
+        });
+        connection.onreconnected(() => {
+            document.getElementById('connectionStatus').textContent = 'Live';
+            console.log("SignalR: Reconnected! All good to go.");
+            document.getElementById('connectionStatus').className = 'connected';
+        });
+
+        startConnection();
+    </script>
+</body>
+</html>
+
+@functions {
+    string StatusBadge(ClinicSystem.Api.Models.AppointmentStatus s) => s switch
+    {
+        ClinicSystem.Api.Models.AppointmentStatus.Requested   => "bg-warning text-dark",
+        ClinicSystem.Api.Models.AppointmentStatus.Confirmed   => "bg-info text-dark",
+        ClinicSystem.Api.Models.AppointmentStatus.CheckedIn   => "bg-primary",
+        ClinicSystem.Api.Models.AppointmentStatus.InProgress  => "bg-success",
+        ClinicSystem.Api.Models.AppointmentStatus.Completed   => "bg-secondary",
+        ClinicSystem.Api.Models.AppointmentStatus.Cancelled   => "bg-danger",
+        ClinicSystem.Api.Models.AppointmentStatus.Missed      => "bg-dark",
+        _ => "bg-light text-dark"
+    };
+}
