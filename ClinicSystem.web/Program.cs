@@ -1,5 +1,6 @@
 using ClinicSystem.Api.Data;
 using ClinicSystem.Api.Models;
+using ClinicSystem.web.Hubs;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -28,8 +29,14 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
 
-// HttpClient — for calling the API (used by public lookup page)
+// HttpClient
 builder.Services.AddHttpClient();
+
+// NotificationService
+builder.Services.AddScoped<ClinicSystem.Api.Services.NotificationService>();
+
+// SignalR
+builder.Services.AddSignalR();
 
 var app = builder.Build();
 
@@ -50,7 +57,10 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}");
 app.MapRazorPages();
 
-// Seed roles and test users on startup
+// map the SignalR hub so browsers can connect to /appointmentHub
+app.MapHub<AppointmentHub>("/appointmentHub");
+
+// seed roles
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
