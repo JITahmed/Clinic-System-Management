@@ -1,0 +1,33 @@
+@model IEnumerable<ClinicSystem.Api.Models.Notification>
+@{
+    ViewData["Title"] = "Notifications";
+}
+
+<div class="container mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">Notifications</h5>
+        <a asp-action="Dashboard" class="btn btn-outline-secondary btn-sm">← Back</a>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="text-center py-5 text-muted">
+            <p>No notifications yet.</p>
+        </div>
+    }
+    else
+    {
+        <div class="list-group">
+            @foreach (var n in Model)
+            {
+                <div class="list-group-item flex-column align-items-start">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h6 class="mb-1">@n.Title</h6>
+                        <small class="text-muted">@n.CreatedAt.ToString("MMM dd, hh:mm tt")</small>
+                    </div>
+                    <p class="mb-0 text-muted">@n.Message</p>
+                </div>
+            }
+        </div>
+    }
+</div>

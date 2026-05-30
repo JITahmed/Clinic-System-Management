@@ -1,0 +1,83 @@
+@model IEnumerable<ClinicSystem.Api.Models.DoctorSchedule>
+@{
+    ViewData["Title"] = "My Schedule";
+    var leaves = ViewBag.Leaves as IEnumerable<ClinicSystem.Api.Models.DoctorLeave>
+                 ?? Enumerable.Empty<ClinicSystem.Api.Models.DoctorLeave>();
+    var doctor = ViewBag.Doctor as ClinicSystem.Api.Models.Doctor;
+}
+
+<div class="container mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">My Schedule</h5>
+        <a asp-action="Dashboard" class="btn btn-outline-secondary btn-sm">← Back</a>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header"><h6 class="mb-0">Working Hours</h6></div>
+                <div class="card-body p-0">
+                    @if (!Model.Any())
+                    {
+                        <p class="text-muted p-3 mb-0">No schedule set. Contact the clinic manager.</p>
+                    }
+                    else
+                    {
+                        <table class="table mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Day</th>
+                                    <th>Start</th>
+                                    <th>End</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var s in Model)
+                                {
+                                    <tr>
+                                        <td>@s.DayOfWeek</td>
+                                        <td>@s.StartTime.ToString(@"hh\:mm")</td>
+                                        <td>@s.EndTime.ToString(@"hh\:mm")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header"><h6 class="mb-0">Upcoming Leave</h6></div>
+                <div class="card-body p-0">
+                    @if (!leaves.Any())
+                    {
+                        <p class="text-muted p-3 mb-0">No upcoming leave periods.</p>
+                    }
+                    else
+                    {
+                        <table class="table mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>From</th>
+                                    <th>To</th>
+                                    <th>Reason</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var l in leaves)
+                                {
+                                    <tr>
+                                        <td>@l.StartDate.ToString("MMM dd")</td>
+                                        <td>@l.EndDate.ToString("MMM dd")</td>
+                                        <td>@l.Reason</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
