@@ -1,0 +1,139 @@
+@{
+    ViewData["Title"] = "Book Appointment";
+}
+
+<h2 class="mb-4">Book Appointment</h2>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show">@TempData["Error"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+}
+
+<form asp-action="BookAppointment" method="post" id="bookingForm">
+    @Html.AntiForgeryToken()
+    <div class="row g-3">
+
+        <!-- patient selection -->
+        <div class="col-md-6">
+            <label class="form-label">Patient <span class="text-danger">*</span></label>
+            <select name="PatientId" id="patientSelect" class="form-select" required>
+                <option value="">Select Patient</option>
+                @foreach (var p in (IEnumerable<ClinicSystem.Api.Models.Patient>)ViewBag.Patients)
+                {
+                    var selected = ViewBag.SelectedPatientId?.ToString() == p.Id.ToString() ? "selected" : "";
+                    <option value="@p.Id" @selected>@p.User.FullName (@p.CPRNumber)</option>
+                }
+            </select>
+        </div>
+
+        <!-- specialization -->
+        <div class="col-md-6">
+            <label class="form-label">Specialization <span class="text-danger">*</span></label>
+            <select id="specializationSelect" class="form-select" required>
+                <option value="">Select Specialization</option>
+                @foreach (var s in (IEnumerable<ClinicSystem.Api.Models.Specialization>)ViewBag.Specializations)
+                {
+                    <option value="@s.Id">@s.Name</option>
+                }
+            </select>
+        </div>
+
+        <!-- doctor, it's loaded dynamically -->
+        <div class="col-md-6">
+            <label class="form-label">Doctor <span class="text-danger">*</span></label>
+            <select name="DoctorId" id="doctorSelect" class="form-select" required>
+                <option value="">Select Specialization First</option>
+            </select>
+        </div>
+
+        <!-- Date -->
+        <div class="col-md-3">
+            <label class="form-label">Date <span class="text-danger">*</span></label>
+            <input type="date" id="appointmentDate" name="AppointmentDate" class="form-control"
+                   min="@DateTime.Today.ToString("yyyy-MM-dd")" required />
+        </div>
+
+        <!-- Time slot, it's loaded dynamically too -->
+        <div class="col-md-3">
+            <label class="form-label">Time Slot <span class="text-danger">*</span></label>
+            <select name="StartTime" id="slotSelect" class="form-select" required>
+                <option value="">Pick doctor &amp; date</option>
+            </select>
+        </div>
+
+        <!-- reason -->
+        <div class="col-12">
+            <label class="form-label">Reason for Visit <span class="text-danger">*</span></label>
+            <textarea name="ReasonForVisit" class="form-control" rows="3"
+                      placeholder="Brief description of the visit reasons..." required></textarea>
+        </div>
+
+        <div class="col-12 d-flex gap-2">
+            <button type="submit" class="btn btn-primary">Book Appointment</button>
+            <a asp-action="Dashboard" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+<script>
+    const specializationSelect = document.getElementById('specializationSelect');
+    const doctorSelect = document.getElementById('doctorSelect');
+    const dateInput = document.getElementById('appointmentDate');
+    const slotSelect = document.getElementById('slotSelect');
+
+    // when specialization changes, load doctors
+    specializationSelect.addEventListener('change', async () => {
+        const specId = specializationSelect.value;
+        doctorSelect.innerHTML = '<option value="">Loading...</option>';
+        slotSelect.innerHTML = '<option value="">Pick doctor & date</option>';
+
+        if (!specId) {
+            doctorSelect.innerHTML = '<option value="">Select Specialization First</option>';
+            return;
+        }
+
+        const res = await fetch(`/Receptionist/GetDoctorsBySpecialization/${specId}`);
+        const doctors = await res.json();
+
+        doctorSelect.innerHTML = '<option value="">Select Doctor</option>';
+        doctors.forEach(d => {
+            const opt = document.createElement('option');
+            opt.value = d.id;
+            opt.textContent = `Dr. ${d.name}`;
+            doctorSelect.appendChild(opt);
+        });
+    });
+
+    // when the doctor or date change it will load the available slots
+    async function loadSlots() {
+        const doctorId = doctorSelect.value;
+        const date = dateInput.value;
+        slotSelect.innerHTML = '<option value="">Loading slots...</option>';
+
+        if (!doctorId || !date) {
+            slotSelect.innerHTML = '<option value="">Pick doctor & date</option>';
+            return;
+        }
+
+        const res = await fetch(`/Receptionist/GetAvailableSlots?doctorId=${doctorId}&date=${date}`);
+        const slots = await res.json();
+
+        if (slots.length === 0) {
+            slotSelect.innerHTML = '<option value="">No available slots</option>';
+            return;
+        }
+
+        slotSelect.innerHTML = '<option value="">Select a Slot</option>';
+        slots.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.start;
+            opt.textContent = s.display;
+            slotSelect.appendChild(opt);
+        });
+    }
+
+    doctorSelect.addEventListener('change', loadSlots);
+    dateInput.addEventListener('change', loadSlots);
+</script>
+}

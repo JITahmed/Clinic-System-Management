@@ -1,0 +1,100 @@
+@model IEnumerable<ClinicSystem.Api.Models.Appointment>
+@{
+    ViewData["Title"] = "Appointments";
+}
+
+<h2 class="mb-4">Appointments</h2>
+
+<!-- Filter bar -->
+<form asp-action="AppointmentList" method="get" class="row g-2 mb-4 align-items-end">
+    <div class="col-auto">
+        <label class="form-label">Date</label>
+        <input type="date" name="date" class="form-control"
+               value="@ViewBag.SelectedDate.ToString("yyyy-MM-dd")" />
+    </div>
+    <div class="col-auto">
+        <label class="form-label">Status</label>
+        <select name="status" class="form-select">
+            <option value="">All</option>
+            @foreach (var s in Enum.GetValues<ClinicSystem.Api.Models.AppointmentStatus>())
+            {
+                <option value="@s" selected="@(ViewBag.SelectedStatus?.ToString() == s.ToString())">@s</option>
+            }
+        </select>
+    </div>
+    <div class="col-auto">
+        <label class="form-label">Search</label>
+        <input type="text" name="search" class="form-control" placeholder="Patient name / CPR / Ref"
+               value="@ViewBag.Search" />
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-primary">Filter</button>
+        <a asp-action="AppointmentList" class="btn btn-outline-secondary">Clear</a>
+    </div>
+    <div class="col-auto ms-auto">
+        <a asp-action="BookAppointment" class="btn btn-success">New Appointment</a>
+    </div>
+</form>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">@TempData["Success"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+}
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">No appointments found for the selected filter</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Reference</th>
+                    <th>Patient</th>
+                    <th>Doctor</th>
+                    <th>Reason</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var appt in Model)
+                {
+                    <tr>
+                        <td>@appt.AppointmentDate.ToString("dd MMM yyyy")</td>
+                        <td>@appt.StartTime.ToString(@"hh\:mm")</td>
+                        <td><code>@appt.AppointmentReferenceNumber</code></td>
+                        <td>@appt.Patient.User.FullName</td>
+                        <td>Dr. @appt.Doctor.User.FullName</td>
+                        <td>@appt.ReasonForVisit</td>
+                        <td>
+                            <span class="badge @StatusBadge(appt.Status)">@appt.Status</span>
+                        </td>
+                        <td>
+                            <a asp-action="AppointmentDetails" asp-route-id="@appt.Id"
+                               class="btn btn-sm btn-outline-primary">Manage</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@functions {
+    string StatusBadge(ClinicSystem.Api.Models.AppointmentStatus s) => s switch
+    {
+        ClinicSystem.Api.Models.AppointmentStatus.Requested   => "bg-warning text-dark",
+        ClinicSystem.Api.Models.AppointmentStatus.Confirmed   => "bg-info text-dark",
+        ClinicSystem.Api.Models.AppointmentStatus.CheckedIn   => "bg-primary",
+        ClinicSystem.Api.Models.AppointmentStatus.InProgress  => "bg-success",
+        ClinicSystem.Api.Models.AppointmentStatus.Completed   => "bg-secondary",
+        ClinicSystem.Api.Models.AppointmentStatus.Cancelled   => "bg-danger",
+        ClinicSystem.Api.Models.AppointmentStatus.Missed      => "bg-dark",
+        _ => "bg-light text-dark"
+    };
+}

@@ -1,5 +1,6 @@
 using ClinicSystem.Api.Data;
 using ClinicSystem.Api.Models;
+using ClinicSystem.web.Hubs;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -32,6 +33,12 @@ builder.Services.AddRazorPages();
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<ClinicSystem.Api.Services.NotificationService>();
 
+// NotificationService
+builder.Services.AddScoped<ClinicSystem.Api.Services.NotificationService>();
+
+// SignalR
+builder.Services.AddSignalR();
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
@@ -53,6 +60,9 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.MapRazorPages();
+
+// map the SignalR hub so browsers can connect to /appointmentHub
+app.MapHub<AppointmentHub>("/appointmentHub");
 
 // Seed roles, test users, patient profile, and doctor profile on startup
 using (var scope = app.Services.CreateScope())

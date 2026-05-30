@@ -1,0 +1,130 @@
+@model IEnumerable<ClinicSystem.Api.Models.Appointment>
+@{
+    ViewData["Title"] = "Receptionist Dashboard";
+}
+
+<h2 class="mb-4">Receptionist Dashboard</h2>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show">
+        @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Summary cards -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-3">
+        <div class="card text-white bg-primary h-100">
+            <div class="card-body text-center">
+                <h1 class="display-5 fw-bold">@ViewBag.TotalToday</h1>
+                <p class="mb-0">Total Today</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card text-white bg-warning h-100">
+            <div class="card-body text-center">
+                <h1 class="display-5 fw-bold">@ViewBag.Requested</h1>
+                <p class="mb-0">Pending Confirmation</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card text-white bg-info h-100">
+            <div class="card-body text-center">
+                <h1 class="display-5 fw-bold">@ViewBag.Waiting</h1>
+                <p class="mb-0">Waiting / Confirmed</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card text-white bg-success h-100">
+            <div class="card-body text-center">
+                <h1 class="display-5 fw-bold">@ViewBag.Completed</h1>
+                <p class="mb-0">Completed</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick actions -->
+<div class="d-flex gap-2 mb-4">
+    <a asp-action="BookAppointment" class="btn btn-primary">
+        Book Appointment
+    </a>
+    <a asp-action="PatientSearch" class="btn btn-outline-secondary">
+        Patient Search
+    </a>
+    <a asp-action="LiveBoard" class="btn btn-outline-success">
+        Live Board
+    </a>
+    <a asp-action="AppointmentList" class="btn btn-outline-dark">
+        All Appointments
+    </a>
+</div>
+
+<!-- Today's appointments table -->
+<h5 class="mb-3">Today's Appointments — @DateTime.Today.ToString("dddd, dd MMM yyyy")</h5>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">No appointments scheduled for today</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>Time</th>
+                    <th>Reference</th>
+                    <th>Patient</th>
+                    <th>Doctor</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var appt in Model)
+                {
+                    <tr>
+                        <td>@appt.StartTime.ToString(@"hh\:mm") – @appt.EndTime.ToString(@"hh\:mm")</td>
+                        <td><code>@appt.AppointmentReferenceNumber</code></td>
+                        <td>@appt.Patient.User.FullName</td>
+                        <td>Dr. @appt.Doctor.User.FullName</td>
+                        <td>
+                            <span class="badge @GetStatusBadge(appt.Status)">@appt.Status</span>
+                        </td>
+                        <td>
+                            <a asp-action="AppointmentDetails" asp-route-id="@appt.Id"
+                               class="btn btn-sm btn-outline-primary">View</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@functions {
+    string GetStatusBadge(ClinicSystem.Api.Models.AppointmentStatus status) => status switch
+    {
+        ClinicSystem.Api.Models.AppointmentStatus.Requested => "bg-warning text-dark",
+        ClinicSystem.Api.Models.AppointmentStatus.Confirmed => "bg-info text-dark",
+        ClinicSystem.Api.Models.AppointmentStatus.CheckedIn => "bg-primary",
+        ClinicSystem.Api.Models.AppointmentStatus.InProgress => "bg-success",
+        ClinicSystem.Api.Models.AppointmentStatus.Completed => "bg-secondary",
+        ClinicSystem.Api.Models.AppointmentStatus.Cancelled => "bg-danger",
+        ClinicSystem.Api.Models.AppointmentStatus.Missed => "bg-dark",
+        _ => "bg-light text-dark"
+    };
+}
