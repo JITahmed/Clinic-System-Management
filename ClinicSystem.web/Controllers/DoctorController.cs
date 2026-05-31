@@ -12,11 +12,17 @@ namespace ClinicSystem.web.Controllers
     {
         private readonly ApplicationDbContext _db;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly ClinicSystem.Api.Services.NotificationService _notificationService;
 
-        public DoctorController(ApplicationDbContext db, UserManager<ApplicationUser> userManager)
+        public DoctorController(
+            ApplicationDbContext db,
+            UserManager<ApplicationUser> userManager,
+            ClinicSystem.Api.Services.NotificationService notificationService)
         {
             _db = db;
             _userManager = userManager;
+            _notificationService = notificationService;
+
         }
 
         private async Task<Doctor?> GetCurrentDoctorAsync()
@@ -139,14 +145,11 @@ namespace ClinicSystem.web.Controllers
 
             appointment.Status = AppointmentStatus.Completed;
 
-            _db.Notifications.Add(new Notification
-            {
-                UserId = appointment.Patient.UserId,
-                Title = "Visit Completed",
-                Message = $"Your appointment on {appointment.AppointmentDate:MMM dd} has been completed. Your visit notes are now available.",
-                Type = NotificationType.AppointmentCompleted,
-                RelatedEntityId = appointment.Id
-            });
+            await _notificationService.AppointmentCompletedAsync(
+                appointment.Patient.UserId,
+                doctor.User.FullName,
+                appointment.AppointmentDate,
+                appointment.Id);
 
             await _db.SaveChangesAsync();
 

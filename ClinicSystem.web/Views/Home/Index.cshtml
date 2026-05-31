@@ -1,8 +1,239 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Welcome";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+@if (User.Identity != null && User.Identity.IsAuthenticated)
+{
+    <!-- Logged in redirect cards -->
+    <div style="padding: 40px 0;">
+        <div class="gw-page-header">
+            <h2>Welcome back, @User.Identity.Name</h2>
+            <p>You are signed in. Head to your dashboard to continue.</p>
+        </div>
+        <div>
+            @if (User.IsInRole("ClinicManager"))
+            {
+                <a asp-controller="ClinicManager" asp-action="Dashboard" class="btn-gw-primary">
+                    <i class="bi bi-grid-1x2-fill"></i> Go to Dashboard
+                </a>
+            }
+            else if (User.IsInRole("Doctor"))
+            {
+                <a asp-controller="Doctor" asp-action="Dashboard" class="btn-gw-primary">
+                    <i class="bi bi-grid-1x2-fill"></i> Go to Dashboard
+                </a>
+            }
+            else if (User.IsInRole("Receptionist"))
+            {
+                <a asp-controller="Receptionist" asp-action="Dashboard" class="btn-gw-primary">
+                    <i class="bi bi-grid-1x2-fill"></i> Go to Dashboard
+                </a>
+            }
+            else if (User.IsInRole("Patient"))
+            {
+                <a asp-controller="Patient" asp-action="Dashboard" class="btn-gw-primary">
+                    <i class="bi bi-grid-1x2-fill"></i> Go to Dashboard
+                </a>
+            }
+        </div>
+    </div>
+}
+else
+{
+    <!-- ── HERO ── -->
+    <section class="gw-hero">
+        <div class="gw-hero-content">
+            <div class="gw-hero-text">
+                <div class="gw-hero-eyebrow">
+                    <i class="bi bi-shield-check"></i> Trusted Healthcare Since 2015
+                </div>
+                <h1>Your Health, <span>Our Priority</span></h1>
+                <p>GoodWill Clinic offers seamless appointment booking, expert doctors, and a complete digital health experience — all in one place.</p>
+                <div class="gw-hero-btns">
+                    <a asp-area="Identity" asp-page="/Account/Register" class="btn-hero-primary">
+                        <i class="bi bi-person-plus-fill"></i> Register as Patient
+                    </a>
+                    <a asp-area="Identity" asp-page="/Account/Login" class="btn-hero-secondary">
+                        Sign In
+                    </a>
+                </div>
+                <div class="gw-hero-stats">
+                    <div>
+                        <span class="hero-stat-value">50+</span>
+                        <span class="hero-stat-label">Specialist Doctors</span>
+                    </div>
+                    <div>
+                        <span class="hero-stat-value">10k+</span>
+                        <span class="hero-stat-label">Patients Served</span>
+                    </div>
+                    <div>
+                        <span class="hero-stat-value">20+</span>
+                        <span class="hero-stat-label">Specializations</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="gw-hero-visual">
+                <div class="gw-hero-card-stack">
+                    <div class="hero-card hero-card-main">
+                        <div class="hero-card-label">Today's Schedule</div>
+                        <div class="hero-card-title">Dr. Al-Rashidi — Cardiology</div>
+                        <div class="hero-card-row">
+                            <div class="hero-card-dot" style="background:#7ee8a8"></div>
+                            <span class="hero-card-text">09:00 AM — Ahmed Hassan</span>
+                        </div>
+                        <div class="hero-card-row">
+                            <div class="hero-card-dot" style="background:#7ee8a8"></div>
+                            <span class="hero-card-text">09:30 AM — Fatima Al-Sayed</span>
+                        </div>
+                        <div class="hero-card-row">
+                            <div class="hero-card-dot" style="background:#ffc107"></div>
+                            <span class="hero-card-text">10:00 AM — Mohammed Ali</span>
+                        </div>
+                    </div>
+                    <div class="hero-card hero-card-float">
+                        <div class="hero-card-label">Appointment</div>
+                        <div class="hero-card-title">Confirmed</div>
+                        <div class="hero-card-row">
+                            <div class="hero-card-dot" style="background:#7ee8a8"></div>
+                            <span class="hero-card-text">Tomorrow, 10:30 AM</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── FEATURES ── -->
+    <section class="gw-section">
+        <div class="gw-section-inner">
+            <div class="gw-section-header">
+                <div class="gw-section-eyebrow">Why GoodWill Clinic</div>
+                <h2>Everything You Need in One Platform</h2>
+                <p class="gw-section-subtitle">From booking your first appointment to tracking your medical history, we make healthcare simple.</p>
+            </div>
+
+            <div class="gw-features-grid">
+                <div class="gw-feature-card">
+                    <div class="gw-feature-icon"><i class="bi bi-calendar-check-fill"></i></div>
+                    <h3>Easy Appointment Booking</h3>
+                    <p>Choose your specialist, pick a time that suits you, and confirm your booking in minutes — no phone calls needed.</p>
+                </div>
+                <div class="gw-feature-card">
+                    <div class="gw-feature-icon"><i class="bi bi-person-badge-fill"></i></div>
+                    <h3>Verified Specialists</h3>
+                    <p>Every doctor on our platform is licensed and verified. Browse profiles, specializations, and availability before booking.</p>
+                </div>
+                <div class="gw-feature-card">
+                    <div class="gw-feature-icon"><i class="bi bi-file-medical-fill"></i></div>
+                    <h3>Digital Medical Records</h3>
+                    <p>Access your full visit history, doctor notes, diagnosis, and prescriptions securely from your patient portal.</p>
+                </div>
+                <div class="gw-feature-card">
+                    <div class="gw-feature-icon"><i class="bi bi-bell-fill"></i></div>
+                    <h3>Real-Time Notifications</h3>
+                    <p>Get instant in-system updates when your appointment is confirmed, changed, or when your doctor adds notes.</p>
+                </div>
+                <div class="gw-feature-card">
+                    <div class="gw-feature-icon"><i class="bi bi-shield-check-fill"></i></div>
+                    <h3>Secure & Private</h3>
+                    <p>Your health data is encrypted and protected. Only you and your treating doctors can access your records.</p>
+                </div>
+                <div class="gw-feature-card">
+                    <div class="gw-feature-icon"><i class="bi bi-display-fill"></i></div>
+                    <h3>Live Waiting Room</h3>
+                    <p>Our real-time queue board keeps you informed of your appointment status without needing to ask at the desk.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── HOW IT WORKS ── -->
+    <section class="gw-section gw-section-alt">
+        <div class="gw-section-inner">
+            <div class="gw-section-header">
+                <div class="gw-section-eyebrow">Getting Started</div>
+                <h2>Book Your Appointment in 4 Steps</h2>
+                <p class="gw-section-subtitle">Simple, fast, and designed for patients who value their time.</p>
+            </div>
+
+            <div class="gw-steps-grid">
+                <div class="gw-step">
+                    <div class="gw-step-number">1</div>
+                    <h3>Create an Account</h3>
+                    <p>Register using your email and CPR number. It takes less than two minutes.</p>
+                </div>
+                <div class="gw-step">
+                    <div class="gw-step-number">2</div>
+                    <h3>Find a Doctor</h3>
+                    <p>Browse our specialists by specialization and view their available time slots.</p>
+                </div>
+                <div class="gw-step">
+                    <div class="gw-step-number">3</div>
+                    <h3>Book Your Slot</h3>
+                    <p>Select a date and time, choose your reason for visit, and submit your request.</p>
+                </div>
+                <div class="gw-step">
+                    <div class="gw-step-number">4</div>
+                    <h3>Attend & Track</h3>
+                    <p>Receive confirmation, track your appointment status, and view your records after your visit.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── OUR SPECIALIZATIONS ── -->
+    <section class="gw-section">
+        <div class="gw-section-inner">
+            <div class="gw-section-header">
+                <div class="gw-section-eyebrow">Medical Expertise</div>
+                <h2>Specializations We Cover</h2>
+                <p class="gw-section-subtitle">Our clinic brings together expertise across a wide range of medical disciplines.</p>
+            </div>
+
+            <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:16px;">
+                @foreach (var spec in new[] {
+                        ("bi-heart-pulse-fill","Cardiology"),
+                        ("bi-lungs-fill","Pulmonology"),
+                        ("bi-activity","Neurology"),
+                        ("bi-bandaid-fill","Orthopedics"),
+                        ("bi-eye-fill","Ophthalmology"),
+                        ("bi-ear-fill","ENT"),
+                        ("bi-droplet-fill","Dermatology"),
+                        ("bi-flower1","Pediatrics"),
+                        ("bi-person-heart","General Medicine"),
+                        ("bi-capsule-pill","Endocrinology"),
+                        ("bi-clipboard2-pulse","Oncology"),
+                        ("bi-person-wheelchair","Rehabilitation")
+                        })
+                {
+                    <div style="background:var(--brand-white);border:1px solid var(--border);border-radius:var(--radius-md);padding:20px 16px;text-align:center;transition:box-shadow 0.18s,transform 0.18s;" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.08)';this.style.transform='translateY(-2px)'" onmouseout="this.style.boxShadow='';this.style.transform=''">
+                        <div style="font-size:1.6rem;color:var(--brand-green);margin-bottom:10px;"><i class="bi @spec.Item1"></i></div>
+                        <div style="font-size:0.82rem;font-weight:600;color:var(--text-primary);">@spec.Item2</div>
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+
+    <!-- ── CTA ── -->
+    <section class="gw-cta">
+        <div style="max-width:600px;margin:0 auto;">
+            <h2>Ready to Take Care of Your Health?</h2>
+            <p>Join thousands of patients who manage their healthcare digitally at GoodWill Clinic.</p>
+            <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+                <a asp-area="Identity" asp-page="/Account/Register" class="btn-hero-primary">
+                    <i class="bi bi-person-plus-fill"></i> Create Your Account
+                </a>
+                <a asp-area="Identity" asp-page="/Account/Login" class="btn-hero-secondary">
+                    Already have an account? Sign In
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <footer class="gw-footer">
+        <p>&copy; @DateTime.Now.Year GoodWill Clinic. Providing quality healthcare with compassion and technology.</p>
+        <p style="margin-top:8px;"><a asp-controller="Home" asp-action="Privacy">Privacy Policy</a></p>
+    </footer>
+}

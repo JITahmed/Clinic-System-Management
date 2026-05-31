@@ -32,16 +32,17 @@
 
                         <div class="col-md-6">
                             <label class="form-label">Specialization</label>
-                            <select name="specializationId" class="form-select" required>
-                                <option value="">Select specialization</option>
-
-                                @if (specializations != null)
+                            <select id="specializationSelect" name="specializationId" class="form-select" required>
+                                <option value="">Select Specialization</option>
+                                @foreach (var s in (IEnumerable<ClinicSystem.Api.Models.Specialization>)ViewBag.Specializations)
                                 {
-                                    foreach (var specialization in specializations)
+                                    @if (ViewBag.PreselectedSpecializationId != null && (int)ViewBag.PreselectedSpecializationId == s.Id)
                                     {
-                                        <option value="@specialization.Id">
-                                            @specialization.Name
-                                        </option>
+                                        <option value="@s.Id" selected>@s.Name</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@s.Id">@s.Name</option>
                                     }
                                 }
                             </select>
@@ -51,27 +52,8 @@
 
                         <div class="col-md-6">
                             <label class="form-label">Doctor</label>
-                            <select name="doctorId" class="form-select" required>
-                                <option value="">Select doctor</option>
-
-                                @if (doctors != null)
-                                {
-                                    foreach (var doctor in doctors)
-                                    {
-                                        var doctorSpecializations = doctor.DoctorSpecializations
-                                        .Where(ds => ds.Specialization != null)
-                                        .Select(ds => ds.Specialization!.Name)
-                                        .ToList();
-
-                                        <option value="@doctor.Id">
-                                            @(doctor.User?.FullName ?? "Doctor")
-                                            @if (doctorSpecializations.Any())
-                                            {
-                                                @: - @string.Join(", ", doctorSpecializations)
-                                            }
-                                        </option>
-                                    }
-                                }
+                            <select name="DoctorId" id="doctorSelect" class="form-select" required>
+                                <option value="">Select Specialization First</option>
                             </select>
 
                             <small class="text-muted">Select an available doctor.</small>
@@ -129,6 +111,59 @@
 
 @section Scripts {
     <script>
+        // Embed all doctors as JSON from server
+        const allDoctors = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(
+            ((IEnumerable<ClinicSystem.Api.Models.Doctor>)ViewBag.Doctors).Select(d => new {
+                id = d.Id,
+                name = d.User != null ? d.User.FullName : "Doctor",
+                specializationIds = d.DoctorSpecializations.Select(ds => ds.SpecializationId).ToList()
+            })
+        ));
+
+        const specializationSelect = document.getElementById("specializationSelect");
+        const doctorSelect = document.getElementById("doctorSelect");
+
+        const preselectedDoctorId = @(ViewBag.PreselectedDoctorId != null ? ViewBag.PreselectedDoctorId.ToString() : "null");
+        const preselectedDoctorName = "@(ViewBag.PreselectedDoctorName ?? "")";
+        const preselectedSpecId = @(ViewBag.PreselectedSpecializationId != null ? ViewBag.PreselectedSpecializationId.ToString() : "null");
+
+        function populateDoctors(selectedSpecId) {
+            doctorSelect.innerHTML = "";
+
+            const filtered = selectedSpecId
+                ? allDoctors.filter(d => d.specializationIds.includes(parseInt(selectedSpecId)))
+                : allDoctors;
+
+            if (filtered.length === 0) {
+                doctorSelect.innerHTML = '<option value="">No doctors available</option>';
+                return;
+            }
+
+            doctorSelect.innerHTML = '<option value="">Select Doctor</option>';
+            filtered.forEach(d => {
+                const opt = document.createElement("option");
+                opt.value = d.id;
+                opt.textContent = "Dr. " + d.name;
+                if (preselectedDoctorId && d.id === preselectedDoctorId) {
+                    opt.selected = true;
+                }
+                doctorSelect.appendChild(opt);
+            });
+        }
+
+        specializationSelect.addEventListener("change", function () {
+            populateDoctors(this.value);
+        });
+
+        // On page load — if preselected, populate immediately
+        if (preselectedSpecId) {
+            specializationSelect.value = preselectedSpecId;
+            populateDoctors(preselectedSpecId);
+        } else {
+            populateDoctors(null);
+        }
+
+        // Other reason toggle
         const reasonDropdown = document.getElementById("reasonForVisit");
         const otherReasonBox = document.getElementById("otherReasonBox");
         const otherReasonInput = document.getElementById("otherReasonForVisit");

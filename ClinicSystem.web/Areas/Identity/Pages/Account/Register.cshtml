@@ -19,6 +19,12 @@
                 <span asp-validation-for="Input.FullName" class="text-danger"></span>
             </div>
 
+            <div class="mb-3">
+                <label class="form-label">CPR Number</label>
+                <input name="CPRNumber" class="form-control" placeholder="e.g. 900101123" />
+                <small class="text-muted">Your CPR number is required for registration.</small>
+            </div>
+
             <div class="form-floating mb-3">
                 <input asp-for="Input.Email" class="form-control" autocomplete="username" placeholder="name@example.com" />
                 <label asp-for="Input.Email">Email</label>
@@ -37,15 +43,7 @@
                 <span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
             </div>
 
-            <div class="mb-3">
-                <label asp-for="Input.Role" class="form-label">Register as</label>
-                <select asp-for="Input.Role" class="form-select">
-                    <option value="">-- Select Role --</option>
-                    <option value="Patient">Patient</option>
-                    <option value="Doctor">Doctor</option>
-                </select>
-                <span asp-validation-for="Input.Role" class="text-danger"></span>
-            </div>
+            <input type="hidden" asp-for="Input.Role" value="Patient" />
 
             <button id="registerSubmit" type="submit" class="w-100 btn btn-lg btn-primary">Register</button>
         </form>

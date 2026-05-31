@@ -193,11 +193,30 @@ namespace ClinicSystem.web.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> BookAppointment()
+        public async Task<IActionResult> BookAppointment(int? doctorId)
         {
             await LoadBookingDropdowns();
+
+            if (doctorId.HasValue)
+            {
+                var doctor = await _context.Doctors
+                    .Include(d => d.User)
+                    .Include(d => d.DoctorSpecializations)
+                    .FirstOrDefaultAsync(d => d.Id == doctorId.Value);
+
+                if (doctor != null)
+                {
+                    ViewBag.PreselectedDoctorId = doctor.Id;
+                    ViewBag.PreselectedDoctorName = doctor.User.FullName;
+                    ViewBag.PreselectedSpecializationId = doctor.DoctorSpecializations
+                        .FirstOrDefault()?.SpecializationId;
+                }
+            }
+
             return View();
         }
+
+
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -497,5 +516,57 @@ namespace ClinicSystem.web.Controllers
             _context.Notifications.Add(notification);
             await _context.SaveChangesAsync();
         }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> MarkNotificationAsRead(int id)
+        {
+            var userId = _userManager.GetUserId(User);
+            var notification = await _context.Notifications
+                .FirstOrDefaultAsync(n => n.Id == id && n.UserId == userId);
+
+            if (notification != null)
+            {
+                notification.IsRead = true;
+                await _context.SaveChangesAsync();
+            }
+
+            return RedirectToAction("Notifications");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> MarkAllNotificationsAsRead()
+        {
+            var userId = _userManager.GetUserId(User);
+            var unread = await _context.Notifications
+                .Where(n => n.UserId == userId && !n.IsRead)
+                .ToListAsync();
+
+            foreach (var n in unread)
+                n.IsRead = true;
+
+            await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = "All notifications marked as read.";
+            return RedirectToAction("Notifications");
+        }
+
+        public async Task<IActionResult> Notifications()
+        {
+            var userId = _userManager.GetUserId(User);
+            var notifications = await _context.Notifications
+                .Where(n => n.UserId == userId)
+                .OrderByDescending(n => n.CreatedAt)
+                .ToListAsync();
+            return View(notifications);
+        }
+
+
+
+
+
+
+
+
     }
 }

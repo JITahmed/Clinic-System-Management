@@ -39,6 +39,9 @@ namespace ClinicSystem.web.Areas.Identity.Pages.Account
             [Display(Name = "Full Name")]
             public string FullName { get; set; }
 
+            [Display(Name = "CPR Number")]
+            public string? CPRNumber { get; set; }
+
             [Required]
             [EmailAddress]
             [Display(Name = "Email")]
@@ -97,7 +100,9 @@ namespace ClinicSystem.web.Areas.Identity.Pages.Account
                             var patient = new Patient
                             {
                                 UserId = user.Id,
-                                CPRNumber = "TEMP-" + Guid.NewGuid().ToString("N")[..8].ToUpper(),
+                                CPRNumber = !string.IsNullOrWhiteSpace(Input.CPRNumber)
+                                ? Input.CPRNumber.Trim()
+                                : "TEMP-" + Guid.NewGuid().ToString("N")[..8].ToUpper(),
                                 PatientReferenceNumber = "PAT-" + Guid.NewGuid().ToString("N")[..8].ToUpper(),
                                 Gender = string.Empty,
                                 BloodType = string.Empty,

@@ -31,8 +31,6 @@ builder.Services.AddRazorPages();
 
 // HttpClient - for calling the API (used by public lookup page)
 builder.Services.AddHttpClient();
-builder.Services.AddScoped<ClinicSystem.Api.Services.NotificationService>();
-
 // NotificationService
 builder.Services.AddScoped<ClinicSystem.Api.Services.NotificationService>();
 

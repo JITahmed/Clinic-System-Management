@@ -120,11 +120,10 @@
                                         </span>
                                     }
                                 </p>
-
-                                <a asp-controller="Patient" asp-action="BookAppointment" class="btn soft-btn btn-soft-success btn-arrow">
+                                <a asp-controller="Patient" asp-action="BookAppointment" asp-route-doctorId="@doctor.Id" class="btn soft-btn btn-soft-success btn-arrow">
                                     Book Appointment <span>→</span>
-                                </a>
-                            </div>
+                                    </a>
+                            </div> in
                         </div>
                     </div>
                 </div>

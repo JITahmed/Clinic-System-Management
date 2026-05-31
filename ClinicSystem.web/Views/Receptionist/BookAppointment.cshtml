@@ -20,8 +20,7 @@
                 <option value="">Select Patient</option>
                 @foreach (var p in (IEnumerable<ClinicSystem.Api.Models.Patient>)ViewBag.Patients)
                 {
-                    var selected = ViewBag.SelectedPatientId?.ToString() == p.Id.ToString() ? "selected" : "";
-                    <option value="@p.Id" @selected>@p.User.FullName (@p.CPRNumber)</option>
+                    <option value="@p.Id" selected="@(ViewBag.SelectedPatientId?.ToString() == p.Id.ToString() ? "selected" : null)">@p.User.FullName</option>
                 }
             </select>
         </div>
