@@ -1,4 +1,4 @@
-﻿using ClinicSystem.Api.Data;
+using ClinicSystem.Api.Data;
 using ClinicSystem.Api.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -318,6 +318,22 @@ namespace ClinicSystem.web.Controllers
                 userId,
                 "Appointment Request Sent",
                 $"Your appointment request for {appointmentDay:dd MMM yyyy} at {startTime:hh\\:mm} has been submitted successfully.",
+                NotificationType.AppointmentBooked,
+                appointment.Id
+            );
+
+            var bookingDoctor = await _context.Doctors
+                .FirstOrDefaultAsync(d => d.Id == doctorId);
+
+            var bookingPatientName = await _context.Patients
+                .Where(p => p.Id == patient.Id)
+                .Select(p => p.User.FullName)
+                .FirstOrDefaultAsync();
+
+            await CreatePatientNotificationAsync(
+                bookingDoctor?.UserId,
+                "New Appointment Request",
+                $"{bookingPatientName} has requested an appointment on {appointmentDay:dd MMM yyyy} at {startTime:hh\\:mm}.",
                 NotificationType.AppointmentBooked,
                 appointment.Id
             );
