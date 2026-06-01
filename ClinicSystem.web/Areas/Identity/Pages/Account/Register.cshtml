@@ -1,17 +1,20 @@
-﻿@page
+@page
 @model RegisterModel
 @{
     ViewData["Title"] = "Register";
 }
 
-<h1>@ViewData["Title"]</h1>
+<div class="auth-wrapper">
+    <div class="auth-card">
+        <div class="auth-brand">
+            <i class="bi bi-heart-pulse-fill"></i>
+            <span>Goodwill Clinic</span>
+        </div>
+        <h1 class="auth-title">Create your account</h1>
+        <p class="auth-subtitle">Register as a patient to book appointments</p>
 
-<div class="row">
-    <div class="col-md-4">
         <form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post">
-            <h2>Create a new account.</h2>
-            <hr />
-            <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3" role="alert"></div>
 
             <div class="form-floating mb-3">
                 <input asp-for="Input.FullName" class="form-control" placeholder="Full Name" />
@@ -21,8 +24,8 @@
 
             <div class="mb-3">
                 <label class="form-label">CPR Number</label>
-                <input name="CPRNumber" class="form-control" placeholder="e.g. 900101123" />
-                <small class="text-muted">Your CPR number is required for registration.</small>
+                <input name="CPRNumber" class="form-control" placeholder="e.g. 060110414" />
+                <small class="text-muted">Your CPR number is required for registration</small>
             </div>
 
             <div class="form-floating mb-3">
@@ -45,7 +48,11 @@
 
             <input type="hidden" asp-for="Input.Role" value="Patient" />
 
-            <button id="registerSubmit" type="submit" class="w-100 btn btn-lg btn-primary">Register</button>
+            <button id="registerSubmit" type="submit" class="auth-submit">Register</button>
+
+            <div class="auth-footer">
+                <p class="mb-0">Already have an account? <a asp-page="./Login">Sign in</a></p>
+            </div>
         </form>
     </div>
 </div>
