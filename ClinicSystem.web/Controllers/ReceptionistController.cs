@@ -284,9 +284,6 @@ namespace ClinicSystem.web.Controllers
             var appointment = await _context.Appointments
                 .Include(a => a.Patient).ThenInclude(p => p.User)
                 .Include(a => a.Doctor).ThenInclude(d => d.User)
-                    .ThenInclude(u => u.Doctor)
-                        .ThenInclude(d => d!.DoctorSpecializations)
-                            .ThenInclude(ds => ds.Specialization)
                 .Include(a => a.VisitRecord)
                 .FirstOrDefaultAsync(a => a.Id == id);
 
@@ -346,9 +343,30 @@ namespace ClinicSystem.web.Controllers
         // cancelling appointment
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CancelAppointment(int appointmentId, string cancellationReason)
+        public async Task<IActionResult> CancelAppointment(int id, string cancellationReason)
         {
-            return await UpdateStatus(appointmentId, AppointmentStatus.Cancelled, cancellationReason);
+            return await UpdateStatus(id, AppointmentStatus.Cancelled, cancellationReason);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ConfirmAppointment(int id)
+        {
+            return await UpdateStatus(id, AppointmentStatus.Confirmed, null);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CheckIn(int id)
+        {
+            return await UpdateStatus(id, AppointmentStatus.CheckedIn, null);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> MarkMissed(int id)
+        {
+            return await UpdateStatus(id, AppointmentStatus.Missed, null);
         }
 
         // The live board
