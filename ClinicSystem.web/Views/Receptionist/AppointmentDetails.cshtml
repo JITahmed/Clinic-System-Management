@@ -3,186 +3,170 @@
 @{
     ViewData["Title"] = "Appointment Details";
     var status = Model.Status;
-}
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Appointment Details</h2>
-    <a asp-action="AppointmentList" class="btn btn-outline-secondary">Back to List</a>
-</div>
-
-@if (TempData["Success"] != null)
-{
-    <div class="alert alert-success alert-dismissible fade show">@TempData["Success"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
-}
-@if (TempData["Error"] != null)
-{
-    <div class="alert alert-danger alert-dismissible fade show">@TempData["Error"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
-}
-
-<div class="row">
-    <!-- appointment info -->
-    <div class="col-md-7">
-        <div class="card mb-4">
-            <div class="card-header d-flex justify-content-between">
-                <strong>@Model.AppointmentReferenceNumber</strong>
-                <span class="badge @StatusBadge(status) fs-6">@status</span>
-            </div>
-            <div class="card-body">
-                <dl class="row mb-0">
-                    <dt class="col-sm-4">Date</dt>
-                    <dd class="col-sm-8">@Model.AppointmentDate.ToString("dddd, dd MMM yyyy")</dd>
-
-                    <dt class="col-sm-4">Time</dt>
-                    <dd class="col-sm-8">@Model.StartTime.ToString(@"hh\:mm") – @Model.EndTime.ToString(@"hh\:mm")</dd>
-
-                    <dt class="col-sm-4">Patient</dt>
-                    <dd class="col-sm-8">@Model.Patient.User.FullName <small class="text-muted">(CPR: @Model.Patient.CPRNumber)</small></dd>
-
-                    <dt class="col-sm-4">Doctor</dt>
-                    <dd class="col-sm-8">Dr. @Model.Doctor.User.FullName</dd>
-
-                    <dt class="col-sm-4">Reason</dt>
-                    <dd class="col-sm-8">@Model.ReasonForVisit</dd>
-
-                    @if (!string.IsNullOrEmpty(Model.CancellationReason))
-                    {
-                        <dt class="col-sm-4">Cancellation Reason</dt>
-                        <dd class="col-sm-8 text-danger">@Model.CancellationReason</dd>
-                    }
-                </dl>
-            </div>
-        </div>
-
-        @if (Model.VisitRecord != null)
-        {
-            <div class="card mb-4">
-                <div class="card-header">Visit Record</div>
-                <div class="card-body">
-                    <p><strong>Diagnosis:</strong> @Model.VisitRecord.Diagnosis</p>
-                    <p><strong>Doctor Notes:</strong> @Model.VisitRecord.DoctorNotes</p>
-                    <p><strong>Treatment Plan:</strong> @Model.VisitRecord.TreatmentPlan</p>
-                </div>
-            </div>
-        }
-    </div>
-
-    <!-- lifecycle actions -->
-    <div class="col-md-5">
-        <div class="card">
-            <div class="card-header">Update Status</div>
-            <div class="card-body d-grid gap-2">
-
-                @* Confirm (Requested then Confirmed) *@
-                @if (status == AppointmentStatus.Requested)
-                {
-                    <form asp-action="UpdateStatus" method="post">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="appointmentId" value="@Model.Id" />
-                        <input type="hidden" name="newStatus" value="@AppointmentStatus.Confirmed" />
-                        <button type="submit" class="btn btn-info w-100">Confirm Appointment</button>
-                    </form>
-                }
-
-                @* Check In (Confirmed then CheckedIn) *@
-                @if (status == AppointmentStatus.Confirmed)
-                {
-                    <form asp-action="UpdateStatus" method="post">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="appointmentId" value="@Model.Id" />
-                        <input type="hidden" name="newStatus" value="@AppointmentStatus.CheckedIn" />
-                        <button type="submit" class="btn btn-primary w-100">Check In Patient</button>
-                    </form>
-                }
-
-                @* Mark In Progress (CheckedIn then InProgress) *@
-                @if (status == AppointmentStatus.CheckedIn)
-                {
-                    <form asp-action="UpdateStatus" method="post">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="appointmentId" value="@Model.Id" />
-                        <input type="hidden" name="newStatus" value="@AppointmentStatus.InProgress" />
-                        <button type="submit" class="btn btn-success w-100">Mark In Progress</button>
-                    </form>
-                }
-
-                @* Complete (InProgress then Completed) *@
-                @if (status == AppointmentStatus.InProgress)
-                {
-                    <form asp-action="UpdateStatus" method="post">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="appointmentId" value="@Model.Id" />
-                        <input type="hidden" name="newStatus" value="@AppointmentStatus.Completed" />
-                        <button type="submit" class="btn btn-secondary w-100">Mark Completed</button>
-                    </form>
-                }
-
-                @* mark missed for the confirmed only *@
-                @if (status == AppointmentStatus.Confirmed)
-                {
-                    <form asp-action="UpdateStatus" method="post">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="appointmentId" value="@Model.Id" />
-                        <input type="hidden" name="newStatus" value="@AppointmentStatus.Missed" />
-                        <button type="submit" class="btn btn-dark w-100">Mark as Missed</button>
-                    </form>
-                }
-
-                @* Cancel (Requested / Confirmed / CheckedIn) *@
-                @if (status == AppointmentStatus.Requested ||
-                     status == AppointmentStatus.Confirmed ||
-                     status == AppointmentStatus.CheckedIn)
-                {
-                    <button type="button" class="btn btn-danger w-100" data-bs-toggle="modal" data-bs-target="#cancelModal">
-                        Cancel Appointment
-                    </button>
-                }
-
-                @if (status == AppointmentStatus.Completed ||
-                     status == AppointmentStatus.Cancelled ||
-                     status == AppointmentStatus.Missed)
-                {
-                    <div class="alert alert-secondary mb-0">No further actions available</div>
-                }
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- cancel confirmation modal -->
-<div class="modal fade" id="cancelModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Cancel Appointment</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <form asp-action="CancelAppointment" method="post">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="appointmentId" value="@Model.Id" />
-                <div class="modal-body">
-                    <label class="form-label">Cancellation Reason <span class="text-danger">*</span></label>
-                    <textarea name="cancellationReason" class="form-control" rows="3" required
-                              placeholder="Please provide a reason..."></textarea>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-danger">Confirm Cancellation</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-@functions {
-    string StatusBadge(ClinicSystem.Api.Models.AppointmentStatus s) => s switch
+    string StatusBadgeClass(AppointmentStatus s) => s switch
     {
-        ClinicSystem.Api.Models.AppointmentStatus.Requested   => "bg-warning text-dark",
-        ClinicSystem.Api.Models.AppointmentStatus.Confirmed   => "bg-info text-dark",
-        ClinicSystem.Api.Models.AppointmentStatus.CheckedIn   => "bg-primary",
-        ClinicSystem.Api.Models.AppointmentStatus.InProgress  => "bg-success",
-        ClinicSystem.Api.Models.AppointmentStatus.Completed   => "bg-secondary",
-        ClinicSystem.Api.Models.AppointmentStatus.Cancelled   => "bg-danger",
-        ClinicSystem.Api.Models.AppointmentStatus.Missed      => "bg-dark",
-        _ => "bg-light text-dark"
+        AppointmentStatus.Requested => "badge-soft-warning",
+        AppointmentStatus.Confirmed => "badge-soft-info",
+        AppointmentStatus.CheckedIn => "badge-soft-primary",
+        AppointmentStatus.InProgress => "badge-soft-success",
+        AppointmentStatus.Completed => "badge-soft-success",
+        AppointmentStatus.Cancelled => "badge-soft-danger",
+        AppointmentStatus.Missed => "badge-soft-danger",
+        _ => "badge-soft-info"
     };
 }
+
+<div class="page-shell">
+    <div class="page-header d-flex justify-content-between align-items-start">
+        <div>
+            <h2>Appointment Details</h2>
+            <p>View appointment information and update the status.</p>
+        </div>
+        <a asp-action="AppointmentList" class="btn soft-btn btn-soft-secondary btn-back">
+            <span>‹</span> Back to List
+        </a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success rounded-3 shadow-sm mb-4">@TempData["Success"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger rounded-3 shadow-sm mb-4">@TempData["Error"]</div>
+    }
+
+    <div class="row g-4">
+        <!-- Left: Appointment Info -->
+        <div class="col-md-7">
+            <div class="section-card mb-4">
+                <div class="section-card-header d-flex justify-content-between align-items-center">
+                    <h5>@Model.AppointmentReferenceNumber</h5>
+                    <span class="@StatusBadgeClass(status)">@status</span>
+                </div>
+                <div class="section-card-body">
+                    <table class="table table-bordered info-table">
+                        <tr>
+                            <th>Date</th>
+                            <td>@Model.AppointmentDate.ToString("dddd, dd MMM yyyy")</td>
+                        </tr>
+                        <tr>
+                            <th>Time</th>
+                            <td>@Model.StartTime.ToString(@"hh\:mm") – @Model.EndTime.ToString(@"hh\:mm")</td>
+                        </tr>
+                        <tr>
+                            <th>Patient</th>
+                            <td>
+                                @Model.Patient.User.FullName
+                                <small class="text-muted">(CPR: @Model.Patient.CPRNumber)</small>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Doctor</th>
+                            <td>Dr. @Model.Doctor.User.FullName</td>
+                        </tr>
+                        <tr>
+                            <th>Reason</th>
+                            <td>@Model.ReasonForVisit</td>
+                        </tr>
+                        @if (!string.IsNullOrEmpty(Model.CancellationReason))
+                        {
+                            <tr>
+                                <th>Cancellation Reason</th>
+                                <td class="text-danger">@Model.CancellationReason</td>
+                            </tr>
+                        }
+                    </table>
+                </div>
+            </div>
+
+            @if (Model.VisitRecord != null)
+            {
+                <div class="section-card">
+                    <div class="section-card-header">
+                        <h5>Visit Record</h5>
+                    </div>
+                    <div class="section-card-body">
+                        <p><strong>Diagnosis:</strong> <span class="text-muted">@Model.VisitRecord.Diagnosis</span></p>
+                        <p><strong>Doctor Notes:</strong> <span class="text-muted">@Model.VisitRecord.DoctorNotes</span></p>
+                        <p class="mb-0"><strong>Treatment Plan:</strong> <span class="text-muted">@Model.VisitRecord.TreatmentPlan</span></p>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Right: Status Actions -->
+        <div class="col-md-5">
+            <div class="section-card">
+                <div class="section-card-header">
+                    <h5>Update Status</h5>
+                </div>
+                <div class="section-card-body d-grid gap-2">
+
+                    @* Confirm *@
+                    @if (status == AppointmentStatus.Requested)
+                    {
+                        <form asp-action="ConfirmAppointment" asp-route-id="@Model.Id" method="post">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn soft-btn btn-soft-success w-100">
+                                <i class="bi bi-check-circle me-1"></i> Confirm Appointment
+                            </button>
+                        </form>
+                    }
+
+                    @* Check In *@
+                    @if (status == AppointmentStatus.Confirmed)
+                    {
+                        <form asp-action="CheckIn" asp-route-id="@Model.Id" method="post">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn soft-btn btn-soft-info w-100">
+                                <i class="bi bi-box-arrow-in-right me-1"></i> Check In Patient
+                            </button>
+                        </form>
+                    }
+
+                    @* Mark Missed *@
+                    @if (status == AppointmentStatus.Confirmed)
+                    {
+                        <form asp-action="MarkMissed" asp-route-id="@Model.Id" method="post"
+                              onsubmit="return confirm('Mark this appointment as missed?')">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn soft-btn btn-soft-warning w-100">
+                                <i class="bi bi-x-circle me-1"></i> Mark as Missed
+                            </button>
+                        </form>
+                    }
+
+                    @* Cancel *@
+                    @if (status != AppointmentStatus.Completed &&
+                                        status != AppointmentStatus.Cancelled &&
+                                        status != AppointmentStatus.Missed)
+                    {
+                        <form asp-action="CancelAppointment" asp-route-id="@Model.Id" method="post">
+                            @Html.AntiForgeryToken()
+                            <div class="mb-2">
+                                <label class="form-label">Cancellation Reason</label>
+                                <input type="text" name="cancellationReason" class="form-control"
+                                       placeholder="Enter reason for cancellation" required />
+                            </div>
+                            <button type="submit" class="btn soft-btn btn-soft-danger w-100"
+                                    onclick="return confirm('Cancel this appointment?')">
+                                <i class="bi bi-x-lg me-1"></i> Cancel Appointment
+                            </button>
+                        </form>
+                    }
+
+                    @if (status == AppointmentStatus.Completed ||
+                                        status == AppointmentStatus.Cancelled ||
+                                        status == AppointmentStatus.Missed)
+                    {
+                        <div class="empty-state py-3">
+                            <p class="text-muted mb-0">No further actions available for this appointment.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

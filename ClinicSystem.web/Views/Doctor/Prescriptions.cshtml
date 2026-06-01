@@ -4,96 +4,70 @@
     var patientName = Model.Appointment.Patient.User.FullName;
 }
 
-<div class="container mt-3">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h5 class="mb-0">Prescriptions — @patientName</h5>
-        <a asp-action="PatientHistory" asp-route-id="@Model.Appointment.PatientId"
-           class="btn btn-outline-secondary btn-sm">← Back to History</a>
+<div class="gw-action-bar">
+    <div class="gw-page-header" style="margin-bottom:0;">
+        <h2>Prescriptions</h2>
+        <p>@patientName — Visit on @Model.VisitDate.ToString("MMMM dd, yyyy") | @Model.Diagnosis</p>
     </div>
+    <a asp-action="PatientHistory" asp-route-id="@Model.Appointment.PatientId" class="btn-gw-secondary"><i class="bi bi-arrow-left"></i> Back</a>
+</div>
 
-    <p class="text-muted small">
-        Visit on @Model.VisitDate.ToString("MMMM dd, yyyy") &bull; Diagnosis: @Model.Diagnosis
-    </p>
-
-    @if (TempData["Success"] != null)
-    {
-        <div class="alert alert-success alert-dismissible fade show">
-            @TempData["Success"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
-
-    @if (!Model.Prescriptions.Any())
-    {
-        <p class="text-muted">No prescriptions recorded for this visit.</p>
-    }
-    else
-    {
-        <div class="table-responsive mb-4">
-            <table class="table table-bordered align-middle">
-                <thead class="table-light">
+@if (!Model.Prescriptions.Any())
+{
+    <div class="gw-card" style="margin-bottom:20px;">
+        <div class="gw-empty"><p>No prescriptions recorded for this visit.</p></div>
+    </div>
+}
+else
+{
+    <div class="gw-table-wrap" style="margin-bottom:20px;">
+        <table class="gw-table">
+            <thead>
+                <tr>
+                    <th>Medication</th>
+                    <th>Dosage</th>
+                    <th>Frequency</th>
+                    <th>Duration</th>
+                    <th>Instructions</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var rx in Model.Prescriptions)
+                {
                     <tr>
-                        <th>Medication</th>
-                        <th>Dosage</th>
-                        <th>Frequency</th>
-                        <th>Duration</th>
-                        <th>Instructions</th>
-                        <th></th>
+                        <td><strong>@rx.MedicationName</strong></td>
+                        <td>@rx.Dosage</td>
+                        <td>@rx.Frequency</td>
+                        <td>@rx.Duration</td>
+                        <td>@(string.IsNullOrEmpty(rx.Instructions) ? "—" : rx.Instructions)</td>
+                        <td>
+                            <form asp-action="DeletePrescription" method="post" onsubmit="return confirm('Remove this prescription?')">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="prescriptionId" value="@rx.Id" />
+                                <input type="hidden" name="visitRecordId" value="@Model.Id" />
+                                <button class="btn-gw-danger btn-gw-sm"><i class="bi bi-trash"></i></button>
+                            </form>
+                        </td>
                     </tr>
-                </thead>
-                <tbody>
-                    @foreach (var rx in Model.Prescriptions)
-                    {
-                        <tr>
-                            <td><strong>@rx.MedicationName</strong></td>
-                            <td>@rx.Dosage</td>
-                            <td>@rx.Frequency</td>
-                            <td>@rx.Duration</td>
-                            <td>@(string.IsNullOrEmpty(rx.Instructions) ? "—" : rx.Instructions)</td>
-                            <td>
-                                <form asp-action="DeletePrescription" method="post"
-                                      onsubmit="return confirm('Remove this prescription?')">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="prescriptionId" value="@rx.Id" />
-                                    <input type="hidden" name="visitRecordId" value="@Model.Id" />
-                                    <button class="btn btn-outline-danger btn-sm">Remove</button>
-                                </form>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-    }
-
-    <div class="card shadow-sm">
-        <div class="card-header"><h6 class="mb-0">Add Prescription</h6></div>
-        <div class="card-body">
-            <form asp-action="AddPrescription" method="post">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="visitRecordId" value="@Model.Id" />
-                <div class="row g-2">
-                    <div class="col-md-4">
-                        <input type="text" name="medicationName" class="form-control"
-                               placeholder="Medication *" required />
-                    </div>
-                    <div class="col-md-2">
-                        <input type="text" name="dosage" class="form-control" placeholder="Dosage" />
-                    </div>
-                    <div class="col-md-2">
-                        <input type="text" name="frequency" class="form-control" placeholder="Frequency" />
-                    </div>
-                    <div class="col-md-2">
-                        <input type="text" name="duration" class="form-control" placeholder="Duration" />
-                    </div>
-                    <div class="col-md-2">
-                        <input type="text" name="instructions" class="form-control" placeholder="Instructions" />
-                    </div>
-                </div>
-                <div class="mt-2">
-                    <button type="submit" class="btn btn-primary btn-sm">Add Prescription</button>
-                </div>
-            </form>
-        </div>
+                }
+            </tbody>
+        </table>
     </div>
+}
+
+<div class="gw-card">
+    <div class="gw-card-header"><span class="gw-card-title">Add Prescription</span></div>
+    <form asp-action="AddPrescription" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="visitRecordId" value="@Model.Id" />
+        <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:10px;margin-bottom:12px;">
+            <input type="text" name="medicationName" class="gw-input" placeholder="Medication *" required />
+            <input type="text" name="dosage" class="gw-input" placeholder="Dosage" />
+            <input type="text" name="frequency" class="gw-input" placeholder="Frequency" />
+            <input type="text" name="duration" class="gw-input" placeholder="Duration" />
+            <input type="text" name="instructions" class="gw-input" placeholder="Instructions" />
+        </div>
+        <button type="submit" class="btn-gw-primary btn-gw-sm"><i class="bi bi-plus-lg"></i> Add Prescription</button>
+    </form>
 </div>

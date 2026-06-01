@@ -3,31 +3,40 @@
     ViewData["Title"] = "Notifications";
 }
 
-<div class="container mt-3">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h5 class="mb-0">Notifications</h5>
-        <a asp-action="Dashboard" class="btn btn-outline-secondary btn-sm">← Back</a>
-    </div>
+<div class="gw-page-header">
+    <h2>Notifications</h2>
+    <p>Your recent clinic notifications.</p>
+</div>
 
-    @if (!Model.Any())
-    {
-        <div class="text-center py-5 text-muted">
+@if (!Model.Any())
+{
+    <div class="gw-card">
+        <div class="gw-empty">
+            <div class="gw-empty-icon"><i class="bi bi-bell"></i></div>
             <p>No notifications yet.</p>
         </div>
-    }
-    else
-    {
-        <div class="list-group">
-            @foreach (var n in Model)
-            {
-                <div class="list-group-item flex-column align-items-start">
-                    <div class="d-flex w-100 justify-content-between">
-                        <h6 class="mb-1">@n.Title</h6>
-                        <small class="text-muted">@n.CreatedAt.ToString("MMM dd, hh:mm tt")</small>
+    </div>
+}
+else
+{
+    <div style="display:flex;flex-direction:column;gap:12px;">
+        @foreach (var n in Model)
+        {
+            <div class="gw-card" style="border-left:3px solid @(n.IsRead ? "var(--border)" : "var(--doctor-accent)");">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;">
+                    <div>
+                        <div class="fw-600" style="margin-bottom:4px;">@n.Title</div>
+                        <div class="text-muted-gw" style="font-size:0.875rem;">@n.Message</div>
                     </div>
-                    <p class="mb-0 text-muted">@n.Message</p>
+                    <div style="text-align:right;flex-shrink:0;">
+                        <div style="font-size:0.78rem;color:var(--text-muted);">@n.CreatedAt.ToString("MMM dd, hh:mm tt")</div>
+                        @if (!n.IsRead)
+                        {
+                            <span class="gw-badge badge-confirmed" style="margin-top:6px;display:inline-flex;">New</span>
+                        }
+                    </div>
                 </div>
-            }
-        </div>
-    }
-</div>
+            </div>
+        }
+    </div>
+}

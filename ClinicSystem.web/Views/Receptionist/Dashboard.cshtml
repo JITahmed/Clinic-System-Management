@@ -3,128 +3,219 @@
     ViewData["Title"] = "Receptionist Dashboard";
 }
 
-<h2 class="mb-4">Receptionist Dashboard</h2>
+<div class="page-shell">
+    <div class="page-header">
+        <h2>Receptionist Dashboard</h2>
+        <p>Manage today's appointments, search patients, and monitor the live board.</p>
+    </div>
 
-@if (TempData["Success"] != null)
-{
-    <div class="alert alert-success alert-dismissible fade show">
-        @TempData["Success"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-}
-@if (TempData["Error"] != null)
-{
-    <div class="alert alert-danger alert-dismissible fade show">
-        @TempData["Error"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-}
-
-<!-- Summary cards -->
-<div class="row g-3 mb-4">
-    <div class="col-sm-6 col-lg-3">
-        <div class="card text-white bg-primary h-100">
-            <div class="card-body text-center">
-                <h1 class="display-5 fw-bold">@ViewBag.TotalToday</h1>
-                <p class="mb-0">Total Today</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-sm-6 col-lg-3">
-        <div class="card text-white bg-warning h-100">
-            <div class="card-body text-center">
-                <h1 class="display-5 fw-bold">@ViewBag.Requested</h1>
-                <p class="mb-0">Pending Confirmation</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-sm-6 col-lg-3">
-        <div class="card text-white bg-info h-100">
-            <div class="card-body text-center">
-                <h1 class="display-5 fw-bold">@ViewBag.Waiting</h1>
-                <p class="mb-0">Waiting / Confirmed</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-sm-6 col-lg-3">
-        <div class="card text-white bg-success h-100">
-            <div class="card-body text-center">
-                <h1 class="display-5 fw-bold">@ViewBag.Completed</h1>
-                <p class="mb-0">Completed</p>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Quick actions -->
-<div class="d-flex gap-2 mb-4">
-    <a asp-action="BookAppointment" class="btn btn-primary">
-        Book Appointment
-    </a>
-    <a asp-action="PatientSearch" class="btn btn-outline-secondary">
-        Patient Search
-    </a>
-    <a asp-action="LiveBoard" class="btn btn-outline-success">
-        Live Board
-    </a>
-    <a asp-action="AppointmentList" class="btn btn-outline-dark">
-        All Appointments
-    </a>
-</div>
-
-<!-- Today's appointments table -->
-<h5 class="mb-3">Today's Appointments — @DateTime.Today.ToString("dddd, dd MMM yyyy")</h5>
-
-@if (!Model.Any())
-{
-    <div class="alert alert-info">No appointments scheduled for today</div>
-}
-else
-{
-    <div class="table-responsive">
-        <table class="table table-hover align-middle">
-            <thead class="table-dark">
-                <tr>
-                    <th>Time</th>
-                    <th>Reference</th>
-                    <th>Patient</th>
-                    <th>Doctor</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var appt in Model)
-                {
-                    <tr>
-                        <td>@appt.StartTime.ToString(@"hh\:mm") – @appt.EndTime.ToString(@"hh\:mm")</td>
-                        <td><code>@appt.AppointmentReferenceNumber</code></td>
-                        <td>@appt.Patient.User.FullName</td>
-                        <td>Dr. @appt.Doctor.User.FullName</td>
-                        <td>
-                            <span class="badge @GetStatusBadge(appt.Status)">@appt.Status</span>
-                        </td>
-                        <td>
-                            <a asp-action="AppointmentDetails" asp-route-id="@appt.Id"
-                               class="btn btn-sm btn-outline-primary">View</a>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
-}
-
-@functions {
-    string GetStatusBadge(ClinicSystem.Api.Models.AppointmentStatus status) => status switch
+    @if (TempData["Success"] != null)
     {
-        ClinicSystem.Api.Models.AppointmentStatus.Requested => "bg-warning text-dark",
-        ClinicSystem.Api.Models.AppointmentStatus.Confirmed => "bg-info text-dark",
-        ClinicSystem.Api.Models.AppointmentStatus.CheckedIn => "bg-primary",
-        ClinicSystem.Api.Models.AppointmentStatus.InProgress => "bg-success",
-        ClinicSystem.Api.Models.AppointmentStatus.Completed => "bg-secondary",
-        ClinicSystem.Api.Models.AppointmentStatus.Cancelled => "bg-danger",
-        ClinicSystem.Api.Models.AppointmentStatus.Missed => "bg-dark",
-        _ => "bg-light text-dark"
-    };
-}
+        <div class="alert alert-success rounded-3 shadow-sm mb-4">@TempData["Success"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger rounded-3 shadow-sm mb-4">@TempData["Error"]</div>
+    }
+
+    <!-- Summary Cards -->
+    <div class="patient-summary mb-4">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <div class="summary-item">
+                    <div class="summary-icon" style="background: rgba(91,61,138,0.12); color: var(--receptionist-accent);">
+                        <i class="bi bi-calendar2-day-fill"></i>
+                    </div>
+                    <div class="summary-content">
+                        <h6>Total Today</h6>
+                        <h3>@ViewBag.TotalToday</h3>
+                        <p>All appointments today</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 summary-divider">
+                <div class="summary-item">
+                    <div class="summary-icon icon-orange">
+                        <i class="bi bi-hourglass-split"></i>
+                    </div>
+                    <div class="summary-content">
+                        <h6>Pending Confirmation</h6>
+                        <h3>@ViewBag.Requested</h3>
+                        <p>Awaiting your confirmation</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 summary-divider">
+                <div class="summary-item">
+                    <div class="summary-icon icon-blue">
+                        <i class="bi bi-people-fill"></i>
+                    </div>
+                    <div class="summary-content">
+                        <h6>Waiting / Confirmed</h6>
+                        <h3>@ViewBag.Waiting</h3>
+                        <p>Confirmed or checked in</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 summary-divider">
+                <div class="summary-item">
+                    <div class="summary-icon icon-teal">
+                        <i class="bi bi-check2-circle"></i>
+                    </div>
+                    <div class="summary-content">
+                        <h6>Completed</h6>
+                        <h3>@ViewBag.Completed</h3>
+                        <p>Finished today</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-6 col-lg-3">
+            <div class="feature-card">
+                <div class="feature-head">
+                    <div class="feature-icon" style="background: rgba(91,61,138,0.12); color: var(--receptionist-accent);">
+                        <i class="bi bi-calendar-plus-fill"></i>
+                    </div>
+                    <div class="feature-text">
+                        <h5>Book Appointment</h5>
+                        <p>Schedule a new appointment for a patient with a doctor.</p>
+                    </div>
+                </div>
+                <a asp-action="BookAppointment" class="btn soft-btn btn-soft-primary btn-arrow">
+                    Book Now <span>›</span>
+                </a>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="feature-card">
+                <div class="feature-head">
+                    <div class="feature-icon icon-blue">
+                        <i class="bi bi-search"></i>
+                    </div>
+                    <div class="feature-text">
+                        <h5>Patient Search</h5>
+                        <p>Search patients by name, CPR number or reference number.</p>
+                    </div>
+                </div>
+                <a asp-action="PatientSearch" class="btn soft-btn btn-soft-info btn-arrow">
+                    Search <span>›</span>
+                </a>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="feature-card">
+                <div class="feature-head">
+                    <div class="feature-icon icon-teal">
+                        <i class="bi bi-list-check"></i>
+                    </div>
+                    <div class="feature-text">
+                        <h5>All Appointments</h5>
+                        <p>View, filter, and manage all appointments in the system.</p>
+                    </div>
+                </div>
+                <a asp-action="AppointmentList" class="btn soft-btn btn-soft-success btn-arrow">
+                    View All <span>›</span>
+                </a>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="feature-card">
+                <div class="feature-head">
+                    <div class="feature-icon icon-green">
+                        <i class="bi bi-display"></i>
+                    </div>
+                    <div class="feature-text">
+                        <h5>Live Board</h5>
+                        <p>Real-time appointment status display for the waiting room.</p>
+                    </div>
+                </div>
+                <a asp-action="LiveBoard" target="_blank" class="btn soft-btn btn-soft-dark btn-arrow">
+                    Open Board <span>›</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Today's Appointments -->
+    <div class="section-card">
+        <div class="section-card-header d-flex justify-content-between align-items-center">
+            <h5>Today's Appointments</h5>
+            <a asp-action="AppointmentList" class="btn soft-btn btn-soft-secondary btn-sm">View All</a>
+        </div>
+        <div class="section-card-body">
+            @if (!Model.Any())
+            {
+                <div class="empty-state">
+                    <i class="bi bi-calendar-x"></i>
+                    <h5>No appointments today</h5>
+                    <p>There are no appointments scheduled for today.</p>
+                    <a asp-action="BookAppointment" class="btn soft-btn btn-soft-primary">Book Appointment</a>
+                </div>
+            }
+            else
+            {
+                <div class="table-wrap">
+                    <table class="table table-modern">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Reference</th>
+                                <th>Patient</th>
+                                <th>Doctor</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var appt in Model)
+                            {
+                                <tr>
+                                    <td>@appt.StartTime.ToString(@"hh\:mm")</td>
+                                    <td><code>@appt.AppointmentReferenceNumber</code></td>
+                                    <td>@appt.Patient.User.FullName</td>
+                                    <td>Dr. @appt.Doctor.User.FullName</td>
+                                    <td>
+                                        @switch (appt.Status)
+                                        {
+                                            case ClinicSystem.Api.Models.AppointmentStatus.Requested:
+                                                <span class="badge-soft-warning">Requested</span>
+                                                break;
+                                            case ClinicSystem.Api.Models.AppointmentStatus.Confirmed:
+                                                <span class="badge-soft-info">Confirmed</span>
+                                                break;
+                                            case ClinicSystem.Api.Models.AppointmentStatus.CheckedIn:
+                                                <span class="badge-soft-primary">Checked In</span>
+                                                break;
+                                            case ClinicSystem.Api.Models.AppointmentStatus.InProgress:
+                                                <span class="badge-soft-success">In Progress</span>
+                                                break;
+                                            case ClinicSystem.Api.Models.AppointmentStatus.Completed:
+                                                <span class="badge-soft-success">Completed</span>
+                                                break;
+                                            case ClinicSystem.Api.Models.AppointmentStatus.Cancelled:
+                                                <span class="badge-soft-danger">Cancelled</span>
+                                                break;
+                                            case ClinicSystem.Api.Models.AppointmentStatus.Missed:
+                                                <span class="badge-soft-danger">Missed</span>
+                                                break;
+                                        }
+                                    </td>
+                                    <td>
+                                        <a asp-action="AppointmentDetails" asp-route-id="@appt.Id"
+                                           class="btn soft-btn btn-soft-primary btn-sm btn-arrow">
+                                            Manage <span>›</span>
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>

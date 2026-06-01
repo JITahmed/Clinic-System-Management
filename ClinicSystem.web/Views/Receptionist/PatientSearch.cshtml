@@ -2,59 +2,92 @@
     ViewData["Title"] = "Patient Search";
 }
 
-<h2 class="mb-4">Patient Search</h2>
-
-<form asp-action="PatientSearch" method="post" class="mb-4">
-    @Html.AntiForgeryToken()
-    <div class="input-group">
-        <input type="text" name="query" class="form-control form-control-lg"
-               value="@ViewBag.Query"
-               placeholder="Search by name, CPR number, reference, or phone..." />
-        <button type="submit" class="btn btn-primary">Search</button>
+<div class="page-shell">
+    <div class="page-header">
+        <h2>Patient Search</h2>
+        <p>Search for patients by name, CPR number, reference number, or phone.</p>
     </div>
-</form>
 
-@if (ViewBag.Results != null)
-{
-    var results = (IEnumerable<ClinicSystem.Api.Models.Patient>)ViewBag.Results;
-    if (!results.Any())
+    <!-- Search Form -->
+    <div class="form-card mb-4">
+        <form asp-action="PatientSearch" method="post" class="row g-3">
+            @Html.AntiForgeryToken()
+            <div class="col-md-9">
+                <label class="form-label">Search Query</label>
+                <input type="text" name="query" class="form-control"
+                       value="@ViewBag.Query"
+                       placeholder="Enter patient name, CPR number, reference number, or phone..." />
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn soft-btn btn-soft-primary w-100">
+                    <i class="bi bi-search me-1"></i> Search
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Results -->
+    @if (ViewBag.Results != null)
     {
-        <div class="alert alert-warning">No patients found for "@ViewBag.Query"</div>
+        var results = (IEnumerable<ClinicSystem.Api.Models.Patient>)ViewBag.Results;
+
+        if (!results.Any())
+        {
+            <div class="empty-state">
+                <i class="bi bi-person-x"></i>
+                <h5>No patients found</h5>
+                <p>No patients matched "@ViewBag.Query". Try a different name or CPR number.</p>
+            </div>
+        }
+        else
+        {
+            <div class="section-card">
+                <div class="section-card-header d-flex justify-content-between align-items-center">
+                    <h5>Search Results</h5>
+                    <span class="text-muted" style="font-size:0.85rem;">@results.Count() result(s) found</span>
+                </div>
+                <div class="section-card-body">
+                    <div class="table-wrap">
+                        <table class="table table-modern">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>CPR</th>
+                                    <th>Reference</th>
+                                    <th>Gender</th>
+                                    <th>Blood Type</th>
+                                    <th>Phone</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var p in results)
+                                {
+                                    <tr>
+                                        <td><strong>@p.User.FullName</strong></td>
+                                        <td>@p.CPRNumber</td>
+                                        <td><code>@p.PatientReferenceNumber</code></td>
+                                        <td>@p.Gender</td>
+                                        <td>
+                                            @if (!string.IsNullOrEmpty(p.BloodType))
+                                            {
+                                                <span class="badge-soft-danger">@p.BloodType</span>
+                                            }
+                                        </td>
+                                        <td>@p.User.PhoneNumber</td>
+                                        <td>
+                                            <a asp-action="BookAppointment" asp-route-patientId="@p.Id"
+                                               class="btn soft-btn btn-soft-success btn-sm btn-arrow">
+                                                Book <span>›</span>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        }
     }
-    else
-    {
-        <p class="text-muted">@results.Count() result(s) found</p>
-        <div class="table-responsive">
-            <table class="table table-hover align-middle">
-                <thead class="table-dark">
-                    <tr>
-                        <th>Name</th>
-                        <th>CPR</th>
-                        <th>Ref Number</th>
-                        <th>Gender</th>
-                        <th>Blood Type</th>
-                        <th>Phone</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var p in results)
-                    {
-                        <tr>
-                            <td>@p.User.FullName</td>
-                            <td>@p.CPRNumber</td>
-                            <td><code>@p.PatientReferenceNumber</code></td>
-                            <td>@p.Gender</td>
-                            <td>@p.BloodType</td>
-                            <td>@p.User.PhoneNumber</td>
-                            <td>
-                                <a asp-action="BookAppointment" asp-route-patientId="@p.Id"
-                                   class="btn btn-sm btn-success">Book Appointment</a>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-    }
-}
+</div>

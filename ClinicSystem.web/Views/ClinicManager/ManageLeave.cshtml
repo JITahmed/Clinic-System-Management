@@ -3,102 +3,65 @@
     ViewData["Title"] = "Manage Leave";
 }
 
-<div class="container mt-4">
-    <h2>Leave Management — Dr. @Model.User.FullName</h2>
-    <hr />
+<div class="gw-action-bar">
+    <div class="gw-page-header" style="margin-bottom:0;">
+        <h2>Leave Management</h2>
+        <p>Dr. @Model.User.FullName</p>
+    </div>
+    <a asp-action="DoctorDetails" asp-route-id="@Model.Id" class="btn-gw-secondary"><i class="bi bi-arrow-left"></i> Back</a>
+</div>
 
-    @if (TempData["Success"] != null)
-    {
-        <div class="alert alert-success">@TempData["Success"]</div>
-    }
-    @if (TempData["Error"] != null)
-    {
-        <div class="alert alert-danger">@TempData["Error"]</div>
-    }
-
-    <div class="row g-4">
-        <!-- Add Leave Form -->
-        <div class="col-md-5">
-            <div class="card">
-                <div class="card-header bg-warning">
-                    <strong>Add Leave Period</strong>
-                </div>
-                <div class="card-body">
-                    <form asp-action="AddLeave" method="post">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="DoctorId" value="@Model.Id" />
-
-                        <div class="mb-3">
-                            <label class="form-label">Start Date</label>
-                            <input type="date" name="StartDate" class="form-control"
-                                   min="@DateTime.Today.ToString("yyyy-MM-dd")" required />
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">End Date</label>
-                            <input type="date" name="EndDate" class="form-control"
-                                   min="@DateTime.Today.ToString("yyyy-MM-dd")" required />
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Reason</label>
-                            <input type="text" name="Reason" class="form-control"
-                                   placeholder="e.g. Annual leave, Medical conference" />
-                        </div>
-
-                        <button type="submit" class="btn btn-warning w-100">Add Leave</button>
-                    </form>
-                </div>
+<div style="display:grid;grid-template-columns:1fr 1.5fr;gap:20px;align-items:start;">
+    <div class="gw-card">
+        <div class="gw-card-header"><span class="gw-card-title">Add Leave Period</span></div>
+        <form asp-action="AddLeave" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="DoctorId" value="@Model.Id" />
+            <div class="gw-form-group">
+                <label class="gw-label">Start Date</label>
+                <input type="date" name="StartDate" class="gw-input" min="@DateTime.Today.ToString("yyyy-MM-dd")" required />
             </div>
-        </div>
-
-        <!-- Existing Leave Periods -->
-        <div class="col-md-7">
-            <div class="card">
-                <div class="card-header bg-dark text-white">
-                    <strong>Existing Leave Periods</strong>
-                </div>
-                <div class="card-body">
-                    @if (!Model.Leaves.Any())
-                    {
-                        <p class="text-muted">No leave periods recorded.</p>
-                    }
-                    else
-                    {
-                        <table class="table table-sm table-striped">
-                            <thead>
-                                <tr>
-                                    <th>From</th>
-                                    <th>To</th>
-                                    <th>Reason</th>
-                                    <th></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var leave in Model.Leaves.OrderByDescending(l => l.StartDate))
-                                {
-                                    <tr>
-                                        <td>@leave.StartDate.ToString("dd MMM yyyy")</td>
-                                        <td>@leave.EndDate.ToString("dd MMM yyyy")</td>
-                                        <td>@leave.Reason</td>
-                                        <td>
-                                            <form asp-action="DeleteLeave" method="post"
-                                                  class="d-inline"
-                                                  onsubmit="return confirm('Remove this leave period?')">
-                                                @Html.AntiForgeryToken()
-                                                <input type="hidden" name="leaveId" value="@leave.Id" />
-                                                <input type="hidden" name="doctorId" value="@Model.Id" />
-                                                <button type="submit" class="btn btn-sm btn-danger">Remove</button>
-                                            </form>
-                                        </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    }
-                </div>
+            <div class="gw-form-group">
+                <label class="gw-label">End Date</label>
+                <input type="date" name="EndDate" class="gw-input" min="@DateTime.Today.ToString("yyyy-MM-dd")" required />
             </div>
-        </div>
+            <div class="gw-form-group">
+                <label class="gw-label">Reason</label>
+                <input type="text" name="Reason" class="gw-input" placeholder="e.g. Annual leave" />
+            </div>
+            <button type="submit" class="btn-gw-primary" style="width:100%;"><i class="bi bi-plus-lg"></i> Add Leave</button>
+        </form>
     </div>
 
-    <a asp-action="DoctorDetails" asp-route-id="@Model.Id"
-       class="btn btn-secondary mt-4">← Back to Doctor</a>
+    <div class="gw-card">
+        <div class="gw-card-header"><span class="gw-card-title">Existing Leave Periods</span></div>
+        @if (!Model.Leaves.Any())
+        {
+            <div class="gw-empty"><p>No leave periods recorded.</p></div>
+        }
+        else
+        {
+            <table class="gw-table">
+                <thead><tr><th>From</th><th>To</th><th>Reason</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var leave in Model.Leaves.OrderByDescending(l => l.StartDate))
+                    {
+                        <tr>
+                            <td>@leave.StartDate.ToString("dd MMM yyyy")</td>
+                            <td>@leave.EndDate.ToString("dd MMM yyyy")</td>
+                            <td>@leave.Reason</td>
+                            <td>
+                                <form asp-action="DeleteLeave" method="post" onsubmit="return confirm('Remove this leave period?')">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="leaveId" value="@leave.Id" />
+                                    <input type="hidden" name="doctorId" value="@Model.Id" />
+                                    <button type="submit" class="btn-gw-danger btn-gw-sm"><i class="bi bi-trash"></i></button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
 </div>

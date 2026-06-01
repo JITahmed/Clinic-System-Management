@@ -31,7 +31,6 @@
 
     @if (!isAuthenticated)
     {
-        <!-- PUBLIC LAYOUT — no sidebar -->
         <div class="gw-public">
             <nav class="gw-home-topbar">
                 <a class="gw-home-brand" asp-controller="Home" asp-action="Index">
@@ -43,11 +42,7 @@
                     <a asp-area="Identity" asp-page="/Account/Register" class="btn-gw-primary btn-gw-sm">Register</a>
                 </div>
             </nav>
-
-            <main>
-                @RenderBody()
-            </main>
-
+            <main>@RenderBody()</main>
             <footer class="gw-footer">
                 <p>&copy; @DateTime.Now.Year GoodWill Clinic. All rights reserved. &nbsp;|&nbsp; <a asp-controller="Home" asp-action="Privacy">Privacy Policy</a></p>
             </footer>
@@ -55,25 +50,26 @@
     }
     else
     {
-        <!-- AUTHENTICATED LAYOUT — sidebar -->
         <div class="gw-shell">
-
-            <!-- Sidebar overlay (mobile) -->
             <div class="gw-sidebar-overlay" id="sidebarOverlay"></div>
 
-            <!-- Sidebar -->
             <aside class="gw-sidebar" id="sidebar">
-                <div class="gw-sidebar-brand">
+                <!-- Brand — clicking takes back to homepage -->
+                <a class="gw-sidebar-brand" asp-controller="Home" asp-action="Index" style="text-decoration:none;">
                     <div class="brand-icon"><i class="bi bi-heart-pulse-fill"></i></div>
                     <span class="brand-name">Goodwill<span>Clinic</span></span>
-                </div>
+                </a>
 
-                <div class="gw-sidebar-section" style="flex:1; overflow-y:auto;">
+                <div class="gw-sidebar-section" style="flex:1;overflow-y:auto;">
 
                     @if (isManager)
                     {
-                        <div class="gw-sidebar-section-label">Management</div>
+                        <div class="gw-sidebar-section-label">Navigation</div>
+                        <a class="gw-nav-item" asp-controller="Home" asp-action="Index">
+                            <i class="bi bi-house-fill nav-icon"></i> Home
+                        </a>
 
+                        <div class="gw-sidebar-section-label" style="margin-top:12px;">Management</div>
                         <a class="gw-nav-item" asp-controller="ClinicManager" asp-action="Dashboard">
                             <i class="bi bi-grid-1x2-fill nav-icon"></i> Dashboard
                         </a>
@@ -111,12 +107,14 @@
 
                     @if (isDoctor)
                     {
-                        <div class="gw-sidebar-section-label">Doctor Portal</div>
-
+                        <div class="gw-sidebar-section-label">Navigation</div>
+                        <a class="gw-nav-item" asp-controller="Home" asp-action="Index">
+                            <i class="bi bi-house-fill nav-icon"></i> Home
+                        </a>
+                        <div class="gw-sidebar-section-label" style="margin-top:12px;">Doctor Portal</div>
                         <a class="gw-nav-item" asp-controller="Doctor" asp-action="Dashboard">
                             <i class="bi bi-grid-1x2-fill nav-icon"></i> Dashboard
                         </a>
-
                         <button class="gw-nav-item" type="button" data-bs-toggle="collapse" data-bs-target="#menuAppts" aria-expanded="false">
                             <i class="bi bi-calendar2-week-fill nav-icon"></i> Appointments
                             <i class="bi bi-chevron-right nav-arrow"></i>
@@ -129,11 +127,9 @@
                                 <i class="bi bi-calendar-check nav-icon"></i> Upcoming
                             </a>
                         </div>
-
                         <a class="gw-nav-item" asp-controller="Doctor" asp-action="MySchedule">
                             <i class="bi bi-calendar3 nav-icon"></i> My Schedule
                         </a>
-
                         <a class="gw-nav-item" asp-controller="Doctor" asp-action="Notifications">
                             <i class="bi bi-bell-fill nav-icon"></i> Notifications
                         </a>
@@ -141,12 +137,14 @@
 
                     @if (isPatient)
                     {
-                        <div class="gw-sidebar-section-label">Patient Portal</div>
-
+                        <div class="gw-sidebar-section-label">Navigation</div>
+                        <a class="gw-nav-item" asp-controller="Home" asp-action="Index">
+                            <i class="bi bi-house-fill nav-icon"></i> Home
+                        </a>
+                        <div class="gw-sidebar-section-label" style="margin-top:12px;">Patient Portal</div>
                         <a class="gw-nav-item" asp-controller="Patient" asp-action="Dashboard">
                             <i class="bi bi-grid-1x2-fill nav-icon"></i> Dashboard
                         </a>
-
                         <button class="gw-nav-item" type="button" data-bs-toggle="collapse" data-bs-target="#menuPatAppts" aria-expanded="false">
                             <i class="bi bi-calendar2-week-fill nav-icon"></i> Appointments
                             <i class="bi bi-chevron-right nav-arrow"></i>
@@ -162,15 +160,12 @@
                                 <i class="bi bi-clock-history nav-icon"></i> History
                             </a>
                         </div>
-
                         <a class="gw-nav-item" asp-controller="Patient" asp-action="BrowseDoctors">
                             <i class="bi bi-person-vcard-fill nav-icon"></i> Find a Doctor
                         </a>
-
                         <a class="gw-nav-item" asp-controller="Patient" asp-action="Profile">
                             <i class="bi bi-person-circle nav-icon"></i> My Profile
                         </a>
-
                         <a class="gw-nav-item" asp-controller="Patient" asp-action="Notifications">
                             <i class="bi bi-bell-fill nav-icon"></i> Notifications
                         </a>
@@ -178,12 +173,14 @@
 
                     @if (isReceptionist)
                     {
-                        <div class="gw-sidebar-section-label">Receptionist</div>
-
+                        <div class="gw-sidebar-section-label">Navigation</div>
+                        <a class="gw-nav-item" asp-controller="Home" asp-action="Index">
+                            <i class="bi bi-house-fill nav-icon"></i> Home
+                        </a>
+                        <div class="gw-sidebar-section-label" style="margin-top:12px;">Receptionist</div>
                         <a class="gw-nav-item" asp-controller="Receptionist" asp-action="Dashboard">
                             <i class="bi bi-grid-1x2-fill nav-icon"></i> Dashboard
                         </a>
-
                         <button class="gw-nav-item" type="button" data-bs-toggle="collapse" data-bs-target="#menuRecAppts" aria-expanded="false">
                             <i class="bi bi-calendar2-week-fill nav-icon"></i> Appointments
                             <i class="bi bi-chevron-right nav-arrow"></i>
@@ -196,23 +193,18 @@
                                 <i class="bi bi-plus-circle nav-icon"></i> Book Appointment
                             </a>
                         </div>
-
                         <a class="gw-nav-item" asp-controller="Receptionist" asp-action="PatientSearch">
                             <i class="bi bi-search nav-icon"></i> Patient Search
                         </a>
-
                         <a class="gw-nav-item" asp-controller="Receptionist" asp-action="LiveBoard" target="_blank">
                             <i class="bi bi-display-fill nav-icon"></i> Live Board
                         </a>
-
                         <a class="gw-nav-item" asp-controller="Notification" asp-action="Index">
                             <i class="bi bi-bell-fill nav-icon"></i> Notifications
                         </a>
                     }
-
                 </div>
 
-                <!-- Sidebar footer logout -->
                 <div class="gw-sidebar-footer">
                     <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
                         <button type="submit" class="gw-nav-item" style="color:#f87171;">
@@ -222,15 +214,11 @@
                 </div>
             </aside>
 
-            <!-- Topbar -->
             <header class="gw-topbar">
                 <div class="gw-topbar-left">
-                    <button class="gw-sidebar-toggle" id="sidebarToggle">
-                        <i class="bi bi-list"></i>
-                    </button>
+                    <button class="gw-sidebar-toggle" id="sidebarToggle"><i class="bi bi-list"></i></button>
                     <span class="gw-topbar-title">@(ViewData["Title"] ?? "GoodWill Clinic")</span>
                 </div>
-
                 <div class="gw-topbar-right">
                     @if (isPatient)
                     {
@@ -244,13 +232,12 @@
                             <i class="bi bi-bell"></i>
                         </a>
                     }
-                    else if (isReceptionist)
+                    else if (isReceptionist || isManager)
                     {
                         <a asp-controller="Notification" asp-action="Index" class="gw-topbar-btn">
                             <i class="bi bi-bell"></i>
                         </a>
                     }
-
                     <div class="gw-user-chip">
                         <div class="gw-user-avatar">@initials</div>
                         <span>@currentUser</span>
@@ -262,26 +249,25 @@
                 </div>
             </header>
 
-            <!-- Main content -->
             <main class="gw-main">
+                @if (TempData["Success"] != null)
+                {
+                    <div class="gw-alert gw-alert-success mb-4"><i class="bi bi-check-circle-fill"></i> @TempData["Success"]</div>
+                }
+                @if (TempData["Error"] != null)
+                {
+                    <div class="gw-alert gw-alert-danger mb-4"><i class="bi bi-exclamation-circle-fill"></i> @TempData["Error"]</div>
+                }
                 @if (TempData["SuccessMessage"] != null)
                 {
-                    <div class="gw-alert gw-alert-success mb-4">
-                        <i class="bi bi-check-circle-fill"></i>
-                        @TempData["SuccessMessage"]
-                    </div>
+                    <div class="gw-alert gw-alert-success mb-4"><i class="bi bi-check-circle-fill"></i> @TempData["SuccessMessage"]</div>
                 }
                 @if (TempData["ErrorMessage"] != null)
                 {
-                    <div class="gw-alert gw-alert-danger mb-4">
-                        <i class="bi bi-exclamation-circle-fill"></i>
-                        @TempData["ErrorMessage"]
-                    </div>
+                    <div class="gw-alert gw-alert-danger mb-4"><i class="bi bi-exclamation-circle-fill"></i> @TempData["ErrorMessage"]</div>
                 }
-
                 @RenderBody()
             </main>
-
         </div>
     }
 
@@ -289,38 +275,18 @@
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     <script>
-        // Sidebar toggle
-        const sidebar  = document.getElementById('sidebar');
-        const overlay  = document.getElementById('sidebarOverlay');
-        const toggle   = document.getElementById('sidebarToggle');
-
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        const toggle  = document.getElementById('sidebarToggle');
         if (toggle) {
-            toggle.addEventListener('click', () => {
-                sidebar.classList.toggle('open');
-                overlay.classList.toggle('show');
-            });
-            overlay.addEventListener('click', () => {
-                sidebar.classList.remove('open');
-                overlay.classList.remove('show');
-            });
+            toggle.addEventListener('click', () => { sidebar.classList.toggle('open'); overlay.classList.toggle('show'); });
+            overlay.addEventListener('click', () => { sidebar.classList.remove('open'); overlay.classList.remove('show'); });
         }
-
-        // Auto-expand sidebar section for current page
         document.querySelectorAll('.gw-nav-submenu .gw-nav-item').forEach(link => {
-            if (link.href && window.location.href.includes(link.getAttribute('href'))) {
+            if (link.href && window.location.href.includes(new URL(link.href).pathname)) {
                 link.classList.add('active');
-                const collapse = link.closest('.collapse');
-                if (collapse) {
-                    collapse.classList.add('show');
-                    const btn = document.querySelector(`[data-bs-target="#${collapse.id}"]`);
-                    if (btn) btn.setAttribute('aria-expanded', 'true');
-                }
-            }
-        });
-
-        document.querySelectorAll('.gw-sidebar > .gw-sidebar-section > .gw-nav-item[href]').forEach(link => {
-            if (link.href && window.location.href === link.href) {
-                link.classList.add('active');
+                const col = link.closest('.collapse');
+                if (col) { col.classList.add('show'); const btn = document.querySelector(`[data-bs-target="#${col.id}"]`); if(btn) btn.setAttribute('aria-expanded','true'); }
             }
         });
     </script>

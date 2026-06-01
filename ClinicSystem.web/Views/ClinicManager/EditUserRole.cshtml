@@ -3,40 +3,37 @@
     ViewData["Title"] = "Change User Role";
 }
 
-<div class="container mt-4">
-    <h2>Change Role — @Model.FullName</h2>
-    <hr />
-
-    <div class="row">
-        <div class="col-md-5">
-            <div class="card">
-                <div class="card-body">
-                    <p><strong>Email:</strong> @Model.Email</p>
-                    <p>
-                        <strong>Current Role:</strong>
-                        <span class="badge bg-secondary">@ViewBag.CurrentRole</span>
-                    </p>
-
-                    <form asp-action="EditUserRole" method="post">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="UserId" value="@Model.Id" />
-
-                        <div class="mb-3">
-                            <label class="form-label">New Role</label>
-                            <select name="NewRole" class="form-select">
-                                <option value="Patient">Patient</option>
-                                <option value="Doctor">Doctor</option>
-                                <option value="Receptionist">Receptionist</option>
-                                <option value="ClinicManager">Clinic Manager</option>
-                            </select>
-                        </div>
-
-                        <button type="submit" class="btn btn-warning w-100">Update Role</button>
-                    </form>
-                </div>
-            </div>
-        </div>
+<div class="gw-action-bar">
+    <div class="gw-page-header" style="margin-bottom:0;">
+        <h2>Change Role</h2>
+        <p>Update role for @Model.FullName</p>
     </div>
+    <a asp-action="UserList" class="btn-gw-secondary"><i class="bi bi-arrow-left"></i> Back to Users</a>
+</div>
 
-    <a asp-action="UserList" class="btn btn-secondary mt-3">← Back to Users</a>
+<div style="max-width:420px;">
+    <div class="gw-card">
+        <div style="margin-bottom:16px;font-size:0.875rem;">
+            <div class="text-muted-gw" style="margin-bottom:4px;">Email</div>
+            <strong>@Model.Email</strong>
+        </div>
+        <div style="margin-bottom:20px;">
+            <div class="text-muted-gw" style="font-size:0.875rem;margin-bottom:6px;">Current Role</div>
+            <span class="gw-badge badge-confirmed">@ViewBag.CurrentRole</span>
+        </div>
+        <form asp-action="EditUserRole" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="UserId" value="@Model.Id" />
+            <div class="gw-form-group">
+                <label class="gw-label">New Role</label>
+                <select name="NewRole" class="gw-select">
+                    <option value="Patient">Patient</option>
+                    <option value="Doctor">Doctor</option>
+                    <option value="Receptionist">Receptionist</option>
+                    <option value="ClinicManager">Clinic Manager</option>
+                </select>
+            </div>
+            <button type="submit" class="btn-gw-primary" style="width:100%;"><i class="bi bi-check-lg"></i> Update Role</button>
+        </form>
+    </div>
 </div>

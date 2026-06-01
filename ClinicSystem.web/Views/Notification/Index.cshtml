@@ -1,43 +1,63 @@
-﻿@model IEnumerable<ClinicSystem.Api.Models.Notification>
+﻿@using ClinicSystem.Api.Models
+@model IEnumerable<ClinicSystem.Api.Models.Notification>
 @{
     ViewData["Title"] = "Notifications";
+    var unreadCount = Model.Count(n => !n.IsRead);
 }
 
-<div class="container mt-4">
-    <h2>🔔 Notifications</h2>
-    <hr />
+<div class="page-shell">
+    <div class="page-header d-flex justify-content-between align-items-start">
+        <div>
+            <h2>🔔 Notifications</h2>
+            <p>Your clinic notifications and alerts.</p>
+        </div>
+        @if (unreadCount > 0)
+        {
+            <span class="badge-soft-warning" style="align-self:center;">@unreadCount unread</span>
+        }
+    </div>
 
     @if (!Model.Any())
     {
-        <div class="alert alert-info">You have no notifications.</div>
+        <div class="empty-state">
+            <i class="bi bi-bell-slash"></i>
+            <h5>No notifications</h5>
+            <p>You have no notifications at the moment.</p>
+        </div>
     }
     else
     {
-        <div class="list-group">
+        <div class="row g-3">
             @foreach (var n in Model)
             {
-                var bgClass = n.IsRead ? "list-group-item-light" : "list-group-item-primary";
                 var icon = n.Type switch
                 {
-                    ClinicSystem.Api.Models.NotificationType.AppointmentBooked => "📅",
-                    ClinicSystem.Api.Models.NotificationType.AppointmentConfirmed => "✅",
-                    ClinicSystem.Api.Models.NotificationType.AppointmentCancelled => "❌",
-                    ClinicSystem.Api.Models.NotificationType.AppointmentCheckedIn => "🏥",
-                    ClinicSystem.Api.Models.NotificationType.AppointmentCompleted => "🎉",
-                    ClinicSystem.Api.Models.NotificationType.AppointmentMissed => "⚠️",
-                    _ => "🔔"
+                    NotificationType.AppointmentBooked => "bi-calendar-plus-fill",
+                    NotificationType.AppointmentConfirmed => "bi-check-circle-fill",
+                    NotificationType.AppointmentCancelled => "bi-x-circle-fill",
+                    NotificationType.AppointmentCheckedIn => "bi-box-arrow-in-right",
+                    NotificationType.AppointmentCompleted => "bi-patch-check-fill",
+                    NotificationType.AppointmentMissed => "bi-exclamation-triangle-fill",
+                    _ => "bi-bell-fill"
                 };
 
-                <div class="list-group-item @bgClass">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <strong>@icon @n.Title</strong>
-                            @if (!n.IsRead)
-                            {
-                                <span class="badge bg-danger ms-2">New</span>
-                            }
-                            <p class="mb-1 mt-1">@n.Message</p>
-                            <small class="text-muted">@n.CreatedAt.ToString("dd MMM yyyy, hh:mm tt")</small>
+                <div class="col-12">
+                    <div class="section-card" style="@(n.IsRead ? "" : "border-left: 3px solid var(--brand-green-mid);")">
+                        <div class="d-flex justify-content-between align-items-start gap-3">
+                            <div class="d-flex gap-3 align-items-start">
+                                <div class="feature-icon @(n.IsRead ? "" : "icon-green")" style="width:36px;height:36px;font-size:1rem;flex-shrink:0;">
+                                    <i class="bi @icon"></i>
+                                </div>
+                                <div>
+                                    <strong>@n.Title</strong>
+                                    @if (!n.IsRead)
+                                    {
+                                        <span class="badge-soft-success ms-2" style="font-size:0.68rem;">New</span>
+                                    }
+                                    <p class="mb-1 mt-1 text-muted">@n.Message</p>
+                                    <small class="text-muted">@n.CreatedAt.ToLocalTime().ToString("dd MMM yyyy, hh:mm tt")</small>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
