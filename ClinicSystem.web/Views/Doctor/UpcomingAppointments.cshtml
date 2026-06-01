@@ -5,15 +5,24 @@
 
 <div class="gw-page-header">
     <h2>Upcoming Appointments</h2>
-    <p>All your confirmed and requested future appointments.</p>
+    <p>All your confirmed and requested future appointments</p>
 </div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="gw-alert gw-alert-success">@TempData["Success"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="gw-alert gw-alert-danger">@TempData["Error"]</div>
+}
 
 @if (!Model.Any())
 {
     <div class="gw-card">
         <div class="gw-empty">
             <div class="gw-empty-icon"><i class="bi bi-calendar2"></i></div>
-            <p>No upcoming appointments.</p>
+            <p>No upcoming appointments</p>
         </div>
     </div>
 }
@@ -28,6 +37,7 @@ else
                     <th>Patient</th>
                     <th>Reason</th>
                     <th>Status</th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody>
@@ -46,6 +56,17 @@ else
                             else
                             {
                                 <span class="gw-badge badge-requested">@appt.Status</span>
+                            }
+                        </td>
+                        <td>
+                            @if (appt.Status == ClinicSystem.Api.Models.AppointmentStatus.Requested)
+                            {
+                                <form asp-action="ConfirmAppointment" asp-route-id="@appt.Id" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn-gw-primary btn-gw-sm">
+                                        <i class="bi bi-check-circle"></i> Confirm
+                                    </button>
+                                </form>
                             }
                         </td>
                     </tr>
