@@ -10,19 +10,19 @@ namespace ClinicSystem.web.Controllers
     [Authorize(Roles = "Doctor")]
     public class DoctorController : Controller
     {
-        private readonly ApplicationDbContext _db;
+        private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
 
-        public DoctorController(ApplicationDbContext db, UserManager<ApplicationUser> userManager)
+        public DoctorController(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
         {
-            _db = db;
+            _context = context;
             _userManager = userManager;
         }
 
         private async Task<Doctor?> GetCurrentDoctorAsync()
         {
             var userId = _userManager.GetUserId(User);
-            return await _db.Doctors
+            return await _context.Doctors
                 .Include(d => d.User)
                 .Include(d => d.DoctorSpecializations).ThenInclude(ds => ds.Specialization)
                 .FirstOrDefaultAsync(d => d.UserId == userId);
@@ -34,43 +34,65 @@ namespace ClinicSystem.web.Controllers
             if (doctor == null) return NotFound("Doctor profile not found.");
 
             var today = DateTime.Today;
-            var appointments = await _db.Appointments
+            var currentTime = DateTime.Now.TimeOfDay;
+
+            var appointments = await _context.Appointments
                 .Include(a => a.Patient).ThenInclude(p => p.User)
                 .Where(a => a.DoctorId == doctor.Id && a.AppointmentDate.Date == today)
                 .OrderBy(a => a.StartTime)
                 .ToListAsync();
 
-            ViewBag.Doctor = doctor;
-            ViewBag.UnreadCount = await _db.Notifications
+            int upcomingCount = await _context.Appointments
+                .CountAsync(a => a.DoctorId == doctor.Id
+                    && (a.AppointmentDate > today || (a.AppointmentDate == today && a.StartTime >= currentTime))
+                    && (a.Status == AppointmentStatus.Requested || a.Status == AppointmentStatus.Confirmed));
+
+            int completedToday = appointments.Count(a => a.Status == AppointmentStatus.Completed);
+            int checkedIn = appointments.Count(a => a.Status == AppointmentStatus.CheckedIn);
+            int confirmed = appointments.Count(a => a.Status == AppointmentStatus.Confirmed);
+
+            int unreadCount = await _context.Notifications
                 .CountAsync(n => n.UserId == doctor.UserId && !n.IsRead);
+
+            var latestNotification = await _context.Notifications
+                .Where(n => n.UserId == doctor.UserId)
+                .OrderByDescending(n => n.CreatedAt)
+                .FirstOrDefaultAsync();
+
+            ViewBag.Doctor = doctor;
+            ViewBag.TotalToday = appointments.Count;
+            ViewBag.UpcomingCount = upcomingCount;
+            ViewBag.CompletedToday = completedToday;
+            ViewBag.CheckedIn = checkedIn;
+            ViewBag.Confirmed = confirmed;
+            ViewBag.UnreadCount = unreadCount;
+            ViewBag.LatestNotificationTitle = latestNotification?.Title ?? "No recent notifications";
 
             return View(appointments);
         }
 
-        
         public async Task<IActionResult> Consultation(int id)
         {
             var doctor = await GetCurrentDoctorAsync();
             if (doctor == null) return NotFound();
 
-            var appointment = await _db.Appointments
+            var appointment = await _context.Appointments
                 .Include(a => a.Patient).ThenInclude(p => p.User)
                 .Include(a => a.VisitRecord).ThenInclude(v => v!.Prescriptions)
                 .FirstOrDefaultAsync(a => a.Id == id && a.DoctorId == doctor.Id);
 
             if (appointment == null) return NotFound();
 
-            if (appointment.Status != AppointmentStatus.CheckedIn &&
-                appointment.Status != AppointmentStatus.InProgress)
+            if (appointment.Status != AppointmentStatus.CheckedIn && appointment.Status != AppointmentStatus.InProgress)
             {
-                TempData["Error"] = "This appointment cannot be started.";
+                TempData["ErrorMessage"] = "This appointment cannot be started.";
                 return RedirectToAction(nameof(Dashboard));
             }
 
             if (appointment.Status == AppointmentStatus.CheckedIn)
             {
                 appointment.Status = AppointmentStatus.InProgress;
-                await _db.SaveChangesAsync();
+                await _context.SaveChangesAsync();
             }
 
             var vm = new web.Models.ConsultationViewModel
@@ -90,7 +112,6 @@ namespace ClinicSystem.web.Controllers
             return View(vm);
         }
 
-      
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> SaveConsultation(web.Models.ConsultationViewModel model)
@@ -101,7 +122,7 @@ namespace ClinicSystem.web.Controllers
             var doctor = await GetCurrentDoctorAsync();
             if (doctor == null) return NotFound();
 
-            var appointment = await _db.Appointments
+            var appointment = await _context.Appointments
                 .Include(a => a.VisitRecord).ThenInclude(v => v!.Prescriptions)
                 .Include(a => a.Patient).ThenInclude(p => p.User)
                 .FirstOrDefaultAsync(a => a.Id == model.AppointmentId && a.DoctorId == doctor.Id);
@@ -115,8 +136,8 @@ namespace ClinicSystem.web.Controllers
                     AppointmentId = appointment.Id,
                     VisitDate = DateTime.UtcNow
                 };
-                _db.VisitRecords.Add(appointment.VisitRecord);
-                await _db.SaveChangesAsync();
+                _context.VisitRecords.Add(appointment.VisitRecord);
+                await _context.SaveChangesAsync();
             }
 
             appointment.VisitRecord.DoctorNotes = model.Symptoms;
@@ -125,7 +146,7 @@ namespace ClinicSystem.web.Controllers
 
             if (!string.IsNullOrWhiteSpace(model.MedicationName))
             {
-                var prescription = new Prescription
+                _context.Prescriptions.Add(new Prescription
                 {
                     VisitRecordId = appointment.VisitRecord.Id,
                     MedicationName = model.MedicationName,
@@ -133,24 +154,24 @@ namespace ClinicSystem.web.Controllers
                     Frequency = model.Frequency ?? string.Empty,
                     Duration = model.Duration ?? string.Empty,
                     Instructions = model.Instructions ?? string.Empty
-                };
-                _db.Prescriptions.Add(prescription);
+                });
             }
 
             appointment.Status = AppointmentStatus.Completed;
 
-            _db.Notifications.Add(new Notification
+            _context.Notifications.Add(new Notification
             {
                 UserId = appointment.Patient.UserId,
                 Title = "Visit Completed",
-                Message = $"Your appointment on {appointment.AppointmentDate:MMM dd} has been completed. Your visit notes are now available.",
+                Message = $"Your appointment on {appointment.AppointmentDate:dd MMM yyyy} has been completed. Your visit notes are now available.",
                 Type = NotificationType.AppointmentCompleted,
-                RelatedEntityId = appointment.Id
+                RelatedEntityId = appointment.Id,
+                CreatedAt = DateTime.UtcNow
             });
 
-            await _db.SaveChangesAsync();
+            await _context.SaveChangesAsync();
 
-            TempData["Success"] = $"Consultation for {appointment.Patient.User.FullName} saved.";
+            TempData["SuccessMessage"] = $"Consultation for {appointment.Patient.User.FullName} saved successfully.";
             return RedirectToAction(nameof(Dashboard));
         }
 
@@ -159,22 +180,22 @@ namespace ClinicSystem.web.Controllers
             var doctor = await GetCurrentDoctorAsync();
             if (doctor == null) return NotFound();
 
-            var patient = await _db.Patients
+            var patient = await _context.Patients
                 .Include(p => p.User)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (patient == null) return NotFound();
 
-            var hadAppointment = await _db.Appointments
+            var hadAppointment = await _context.Appointments
                 .AnyAsync(a => a.PatientId == id && a.DoctorId == doctor.Id);
 
             if (!hadAppointment)
             {
-                TempData["Error"] = "You can only view history for your own patients.";
+                TempData["ErrorMessage"] = "You can only view history for your own patients.";
                 return RedirectToAction(nameof(Dashboard));
             }
 
-            var visitRecords = await _db.VisitRecords
+            var visitRecords = await _context.VisitRecords
                 .Include(v => v.Appointment).ThenInclude(a => a.Doctor).ThenInclude(d => d.User)
                 .Include(v => v.Prescriptions)
                 .Where(v => v.Appointment.PatientId == id)
@@ -185,13 +206,12 @@ namespace ClinicSystem.web.Controllers
             return View(visitRecords);
         }
 
-        
         public async Task<IActionResult> Prescriptions(int id)
         {
             var doctor = await GetCurrentDoctorAsync();
             if (doctor == null) return NotFound();
 
-            var visitRecord = await _db.VisitRecords
+            var visitRecord = await _context.VisitRecords
                 .Include(v => v.Prescriptions)
                 .Include(v => v.Appointment).ThenInclude(a => a.Patient).ThenInclude(p => p.User)
                 .FirstOrDefaultAsync(v => v.Id == id && v.Appointment.DoctorId == doctor.Id);
@@ -201,7 +221,6 @@ namespace ClinicSystem.web.Controllers
             return View(visitRecord);
         }
 
-        
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddPrescription(int visitRecordId, string medicationName,
@@ -210,7 +229,7 @@ namespace ClinicSystem.web.Controllers
             var doctor = await GetCurrentDoctorAsync();
             if (doctor == null) return NotFound();
 
-            var visitRecord = await _db.VisitRecords
+            var visitRecord = await _context.VisitRecords
                 .Include(v => v.Appointment)
                 .FirstOrDefaultAsync(v => v.Id == visitRecordId && v.Appointment.DoctorId == doctor.Id);
 
@@ -218,7 +237,7 @@ namespace ClinicSystem.web.Controllers
 
             if (!string.IsNullOrWhiteSpace(medicationName))
             {
-                _db.Prescriptions.Add(new Prescription
+                _context.Prescriptions.Add(new Prescription
                 {
                     VisitRecordId = visitRecordId,
                     MedicationName = medicationName,
@@ -227,8 +246,8 @@ namespace ClinicSystem.web.Controllers
                     Duration = duration ?? string.Empty,
                     Instructions = instructions ?? string.Empty
                 });
-                await _db.SaveChangesAsync();
-                TempData["Success"] = "Prescription added.";
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Prescription added.";
             }
 
             return RedirectToAction(nameof(Prescriptions), new { id = visitRecordId });
@@ -241,28 +260,26 @@ namespace ClinicSystem.web.Controllers
             var doctor = await GetCurrentDoctorAsync();
             if (doctor == null) return NotFound();
 
-            var prescription = await _db.Prescriptions
+            var prescription = await _context.Prescriptions
                 .Include(p => p.VisitRecord).ThenInclude(v => v.Appointment)
-                .FirstOrDefaultAsync(p => p.Id == prescriptionId
-                    && p.VisitRecord.Appointment.DoctorId == doctor.Id);
+                .FirstOrDefaultAsync(p => p.Id == prescriptionId && p.VisitRecord.Appointment.DoctorId == doctor.Id);
 
             if (prescription != null)
             {
-                _db.Prescriptions.Remove(prescription);
-                await _db.SaveChangesAsync();
-                TempData["Success"] = "Prescription removed.";
+                _context.Prescriptions.Remove(prescription);
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Prescription removed.";
             }
 
             return RedirectToAction(nameof(Prescriptions), new { id = visitRecordId });
         }
 
-        
         public async Task<IActionResult> Notifications()
         {
             var doctor = await GetCurrentDoctorAsync();
             if (doctor == null) return NotFound();
 
-            var notifications = await _db.Notifications
+            var notifications = await _context.Notifications
                 .Where(n => n.UserId == doctor.UserId)
                 .OrderByDescending(n => n.CreatedAt)
                 .ToListAsync();
@@ -270,7 +287,7 @@ namespace ClinicSystem.web.Controllers
             foreach (var n in notifications.Where(n => !n.IsRead))
                 n.IsRead = true;
 
-            await _db.SaveChangesAsync();
+            await _context.SaveChangesAsync();
             return View(notifications);
         }
 
@@ -279,12 +296,12 @@ namespace ClinicSystem.web.Controllers
             var doctor = await GetCurrentDoctorAsync();
             if (doctor == null) return NotFound();
 
-            var schedules = await _db.DoctorSchedules
+            var schedules = await _context.DoctorSchedules
                 .Where(s => s.DoctorId == doctor.Id && s.IsActive)
                 .OrderBy(s => s.DayOfWeek)
                 .ToListAsync();
 
-            var leaves = await _db.DoctorLeaves
+            var leaves = await _context.DoctorLeaves
                 .Where(l => l.DoctorId == doctor.Id && l.EndDate >= DateTime.Today)
                 .OrderBy(l => l.StartDate)
                 .ToListAsync();
@@ -294,23 +311,21 @@ namespace ClinicSystem.web.Controllers
             return View(schedules);
         }
 
-       
         public async Task<IActionResult> UpcomingAppointments()
         {
             var doctor = await GetCurrentDoctorAsync();
             if (doctor == null) return NotFound();
 
-            var upcoming = await _db.Appointments
+            var upcoming = await _context.Appointments
                 .Include(a => a.Patient).ThenInclude(p => p.User)
                 .Where(a => a.DoctorId == doctor.Id
-                    && a.AppointmentDate.Date >= DateTime.Today
-                    && (a.Status == AppointmentStatus.Confirmed
-                        || a.Status == AppointmentStatus.Requested))
+                    && (a.AppointmentDate > DateTime.Today
+                        || (a.AppointmentDate == DateTime.Today && a.StartTime >= DateTime.Now.TimeOfDay))
+                    && (a.Status == AppointmentStatus.Confirmed || a.Status == AppointmentStatus.Requested))
                 .OrderBy(a => a.AppointmentDate)
                 .ThenBy(a => a.StartTime)
                 .ToListAsync();
 
-            ViewBag.Doctor = doctor;
             return View(upcoming);
         }
     }

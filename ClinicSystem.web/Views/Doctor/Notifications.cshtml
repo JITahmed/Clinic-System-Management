@@ -3,31 +3,45 @@
     ViewData["Title"] = "Notifications";
 }
 
-<div class="container mt-3">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h5 class="mb-0">Notifications</h5>
-        <a asp-action="Dashboard" class="btn btn-outline-secondary btn-sm">← Back</a>
+<div class="page-shell">
+    <div class="page-header">
+        <h2>Notifications</h2>
+        <p>Your appointment and system notifications.</p>
     </div>
 
     @if (!Model.Any())
     {
-        <div class="text-center py-5 text-muted">
-            <p>No notifications yet.</p>
+        <div class="empty-state">
+            <h5 class="mb-2">No notifications</h5>
+            <p class="mb-0">You have no notifications yet.</p>
         </div>
     }
     else
     {
-        <div class="list-group">
-            @foreach (var n in Model)
-            {
-                <div class="list-group-item flex-column align-items-start">
-                    <div class="d-flex w-100 justify-content-between">
-                        <h6 class="mb-1">@n.Title</h6>
-                        <small class="text-muted">@n.CreatedAt.ToString("MMM dd, hh:mm tt")</small>
-                    </div>
-                    <p class="mb-0 text-muted">@n.Message</p>
+        <div class="section-card">
+            <div class="section-card-header">
+                <h5>All Notifications</h5>
+            </div>
+            <div class="section-card-body p-0">
+                <div class="list-group list-group-flush">
+                    @foreach (var n in Model)
+                    {
+                        <div class="list-group-item px-4 py-3">
+                            <div class="d-flex w-100 justify-content-between align-items-start">
+                                <h6 class="mb-1">@n.Title</h6>
+                                <small class="text-muted text-nowrap ms-3">@n.CreatedAt.ToString("MMM dd, hh:mm tt")</small>
+                            </div>
+                            <p class="mb-0 text-muted">@n.Message</p>
+                        </div>
+                    }
                 </div>
-            }
+            </div>
         </div>
     }
+
+    <div class="mt-4">
+        <a asp-action="Dashboard" class="btn soft-btn btn-soft-secondary btn-back">
+            <span>←</span> Back to Dashboard
+        </a>
+    </div>
 </div>
