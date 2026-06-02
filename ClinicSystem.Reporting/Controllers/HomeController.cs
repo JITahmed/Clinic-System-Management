@@ -1,6 +1,8 @@
 using ClinicSystem.Reporting.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
+using ClinicSystem.Reporting.DTOs;
+using System.Text.Json;
 
 namespace ClinicSystem.Reporting.Controllers
 {
