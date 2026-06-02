@@ -37,12 +37,15 @@ namespace ClinicSystem.web.Controllers
         public async Task<IActionResult> Dashboard()
         {
             var doctor = await GetCurrentDoctorAsync();
-            if (doctor == null) return NotFound("Doctor profile not found.");
+            if (doctor == null) return NotFound("Doctor profile not found");
 
             var today = DateTime.Today;
             var appointments = await _db.Appointments
                 .Include(a => a.Patient).ThenInclude(p => p.User)
-                .Where(a => a.DoctorId == doctor.Id && a.AppointmentDate.Date == today)
+                .Where(a => a.DoctorId == doctor.Id
+                    && a.AppointmentDate.Date == today
+                    && a.Status != AppointmentStatus.Cancelled
+                    && a.Status != AppointmentStatus.Missed)
                 .OrderBy(a => a.StartTime)
                 .ToListAsync();
 
@@ -69,7 +72,7 @@ namespace ClinicSystem.web.Controllers
             if (appointment.Status != AppointmentStatus.CheckedIn &&
                 appointment.Status != AppointmentStatus.InProgress)
             {
-                TempData["Error"] = "This appointment cannot be started.";
+                TempData["Error"] = "This appointment cannot be started";
                 return RedirectToAction(nameof(Dashboard));
             }
 
@@ -153,7 +156,7 @@ namespace ClinicSystem.web.Controllers
 
             await _db.SaveChangesAsync();
 
-            TempData["Success"] = $"Consultation for {appointment.Patient.User.FullName} saved.";
+            TempData["Success"] = $"Consultation for {appointment.Patient.User.FullName} saved";
             return RedirectToAction(nameof(Dashboard));
         }
 
@@ -173,7 +176,7 @@ namespace ClinicSystem.web.Controllers
 
             if (!hadAppointment)
             {
-                TempData["Error"] = "You can only view history for your own patients.";
+                TempData["Error"] = "You can only view history for your own patients";
                 return RedirectToAction(nameof(Dashboard));
             }
 
@@ -332,7 +335,7 @@ namespace ClinicSystem.web.Controllers
 
             if (appointment.Status != AppointmentStatus.Requested)
             {
-                TempData["Error"] = "Only requested appointments can be confirmed.";
+                TempData["Error"] = "Only requested appointments can be confirmed";
                 return RedirectToAction(nameof(UpcomingAppointments));
             }
 
@@ -346,7 +349,7 @@ namespace ClinicSystem.web.Controllers
                 appointment.AppointmentDate,
                 appointment.Id);
 
-            TempData["Success"] = $"Appointment with {appointment.Patient.User.FullName} confirmed.";
+            TempData["Success"] = $"Appointment with {appointment.Patient.User.FullName} confirmed";
             return RedirectToAction(nameof(UpcomingAppointments));
         }
     }
