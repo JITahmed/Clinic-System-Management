@@ -33,15 +33,19 @@ namespace ClinicSystem.Api.Controllers
 
             var response = new PublicLookupResponse
             {
-                Upcoming = patient.Appointments
-                    .Where(a => a.AppointmentDate >= DateTime.Today && a.Status == AppointmentStatus.Completed)
-                    .Select(a => new UpcomingAppointment
-                    {
-                        Id = a.Id,
-                        AppointmentDate = a.AppointmentDate,
-                        Status = a.Status.ToString(),
-                        DoctorName = a.Doctor.UserId,
-                    }).ToList(),
+                 Upcoming = patient.Appointments
+                .Where(a => a.AppointmentDate >= DateTime.Today &&
+                            (a.Status == AppointmentStatus.Requested ||
+                             a.Status == AppointmentStatus.Confirmed ||
+                             a.Status == AppointmentStatus.CheckedIn))
+                .OrderBy(a => a.AppointmentDate)
+                .Select(a => new UpcomingAppointment
+                {
+                    Id = a.Id,
+                    AppointmentDate = a.AppointmentDate,
+                    Status = a.Status.ToString(),
+                    DoctorName = a.Doctor.User.FullName,  // ← also fix this (was using UserId)
+                }).ToList(),
 
                 RecentVisits = patient.Appointments
                     .Where(a => a.Status == AppointmentStatus.Completed && a.VisitRecord != null)

@@ -26,7 +26,7 @@ namespace ClinicSystem.web.Controllers
             var client = _httpClientFactory.CreateClient();
             var apiBaseUrl = _config["ApiSettings:BaseUrl"] ?? "https://localhost:7001";
 
-            var response = await client.GetAsync($"{apiBaseUrl}/api/appointments/lookup?cpr={cpr}&ref={referenceNumber}");
+            var response = await client.GetAsync($"{apiBaseUrl}/api/appointments/lookup?cpr={cpr}&refNumber={referenceNumber}");
 
             if (response.IsSuccessStatusCode)
             {
