@@ -1,0 +1,119 @@
+@model List<ClinicSystem.Reporting.DTOs.DoctorDto>
+@{
+    ViewData["Title"] = "Doctor Utilization";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="r-topbar">
+    <div>
+        <h1>Doctor Utilization</h1>
+        <p>Overview of all registered doctors, their specializations and workload.</p>
+    </div>
+    <span class="stat-pill stat-pill-blue">
+        <i class="bi bi-person-badge-fill"></i> @(Model?.Count ?? 0) Doctors
+    </span>
+</div>
+
+<div class="r-card">
+    <div class="r-card-header">
+        <h5>Doctor Directory</h5>
+    </div>
+    <div class="r-card-body p-0">
+        @if (Model == null || !Model.Any())
+        {
+            <div class="text-center text-muted py-5">
+                <i class="bi bi-person-x" style="font-size:2rem;opacity:0.3;"></i>
+                <p class="mt-2">No doctors found.</p>
+            </div>
+        }
+        else
+        {
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-3">#</th>
+                        <th>Doctor</th>
+                        <th>Email</th>
+                        <th>Specializations</th>
+                        <th class="pe-3">Spec Count</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (int i = 0; i < Model.Count; i++)
+                    {
+                        var d = Model[i];
+                        <tr>
+                            <td class="ps-3 text-muted">@(i + 1)</td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div style="width:34px;height:34px;border-radius:50%;background:rgba(26,122,74,0.12);color:#1a7a4a;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.8rem;flex-shrink:0;">
+                                        @(d.Name?.Length > 0 ? d.Name[0].ToString().ToUpper() : "D")
+                                    </div>
+                                    <strong>Dr. @d.Name</strong>
+                                </div>
+                            </td>
+                            <td class="text-muted">@d.Email</td>
+                            <td>
+                                @if (d.Specializations != null && d.Specializations.Any())
+                                {
+                                    @foreach (var spec in d.Specializations)
+                                    {
+                                        <span class="stat-pill stat-pill-green me-1 mb-1" style="font-size:0.72rem;padding:0.2rem 0.6rem;">@spec</span>
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="text-muted">—</span>
+                                }
+                            </td>
+                            <td class="pe-3">
+                                <strong style="color:#1a7a4a;">@(d.Specializations?.Count ?? 0)</strong>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    const names = [@Html.Raw(string.Join(",", (Model ?? new()).Select(d => $"'Dr. {d.Name}'")))];
+    const counts = [@Html.Raw(string.Join(",", (Model ?? new()).Select(d => d.Specializations?.Count ?? 0)))];
+
+    if (names.length > 0) {
+        const canvas = document.createElement('canvas');
+        canvas.height = 200;
+        document.querySelector('.r-card-body').insertAdjacentElement('beforebegin',
+            Object.assign(document.createElement('div'), {
+                className: 'r-card mb-4',
+                innerHTML: '<div class="r-card-header"><h5>Specializations per Doctor</h5></div><div class="r-card-body"><canvas id="specChart" height="200"></canvas></div>'
+            })
+        );
+        setTimeout(() => {
+            new Chart(document.getElementById('specChart'), {
+                type: 'bar',
+                data: {
+                    labels: names,
+                    datasets: [{
+                        label: 'Specializations',
+                        data: counts,
+                        backgroundColor: 'rgba(26,122,74,0.7)',
+                        borderRadius: 6,
+                        borderSkipped: false,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: '#f0f3f6' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }, 100);
+    }
+</script>
+}

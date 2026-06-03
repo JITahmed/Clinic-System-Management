@@ -1,0 +1,186 @@
+@model ClinicSystem.Reporting.DTOs.CancellationData
+@{
+    ViewData["Title"] = "Cancellation Rates";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var cancellationPct = Model?.CancellationRate ?? 0;
+    var missedPct = Model?.MissedRate ?? 0;
+    var healthyPct = Math.Max(0, 100 - cancellationPct - missedPct);
+}
+
+<div class="r-topbar">
+    <div>
+        <h1>Cancellation & Missed Rates</h1>
+        <p>Operational metrics on appointment cancellations and missed appointments.</p>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Cancellation Rate Card -->
+    <div class="col-md-4">
+        <div class="r-card text-center">
+            <div class="r-card-body py-4">
+                <div style="font-size:3rem;font-weight:800;color:#dc3545;">@cancellationPct.ToString("F1")%</div>
+                <div style="font-size:0.9rem;color:#888;font-weight:500;margin-top:0.25rem;">Cancellation Rate</div>
+                <div class="mt-3">
+                    @if (cancellationPct > 20)
+                    {
+                        <span class="stat-pill stat-pill-red"><i class="bi bi-exclamation-triangle-fill"></i> High</span>
+                    }
+                    else if (cancellationPct > 10)
+                    {
+                        <span class="stat-pill" style="background:rgba(245,158,11,0.1);color:#f59e0b;"><i class="bi bi-dash-circle-fill"></i> Moderate</span>
+                    }
+                    else
+                    {
+                        <span class="stat-pill stat-pill-green"><i class="bi bi-check-circle-fill"></i> Good</span>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Missed Rate Card -->
+    <div class="col-md-4">
+        <div class="r-card text-center">
+            <div class="r-card-body py-4">
+                <div style="font-size:3rem;font-weight:800;color:#f59e0b;">@missedPct.ToString("F1")%</div>
+                <div style="font-size:0.9rem;color:#888;font-weight:500;margin-top:0.25rem;">Missed Rate</div>
+                <div class="mt-3">
+                    @if (missedPct > 15)
+                    {
+                        <span class="stat-pill stat-pill-red"><i class="bi bi-exclamation-triangle-fill"></i> High</span>
+                    }
+                    else if (missedPct > 7)
+                    {
+                        <span class="stat-pill" style="background:rgba(245,158,11,0.1);color:#f59e0b;"><i class="bi bi-dash-circle-fill"></i> Moderate</span>
+                    }
+                    else
+                    {
+                        <span class="stat-pill stat-pill-green"><i class="bi bi-check-circle-fill"></i> Good</span>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Healthy Rate Card -->
+    <div class="col-md-4">
+        <div class="r-card text-center">
+            <div class="r-card-body py-4">
+                <div style="font-size:3rem;font-weight:800;color:#1a7a4a;">@healthyPct.ToString("F1")%</div>
+                <div style="font-size:0.9rem;color:#888;font-weight:500;margin-top:0.25rem;">Completion Rate</div>
+                <div class="mt-3">
+                    <span class="stat-pill stat-pill-green"><i class="bi bi-check-circle-fill"></i> Target</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Doughnut Chart -->
+<div class="row g-4">
+    <div class="col-md-5">
+        <div class="r-card">
+            <div class="r-card-header">
+                <h5>Rate Distribution</h5>
+            </div>
+            <div class="r-card-body d-flex justify-content-center">
+                <canvas id="rateChart" style="max-height:280px;"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-7">
+        <div class="r-card">
+            <div class="r-card-header">
+                <h5>Interpretation Guide</h5>
+            </div>
+            <div class="r-card-body">
+                <table class="table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Metric</th>
+                            <th>Current</th>
+                            <th>Target</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Cancellation Rate</td>
+                            <td><strong>@cancellationPct.ToString("F1")%</strong></td>
+                            <td>&lt; 10%</td>
+                            <td>
+                                @if (cancellationPct <= 10)
+                                {
+                                    <span class="stat-pill stat-pill-green">✓ On Target</span>
+                                }
+                                else
+                                {
+                                    <span class="stat-pill stat-pill-red">✗ Above Target</span>
+                                }
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Missed Rate</td>
+                            <td><strong>@missedPct.ToString("F1")%</strong></td>
+                            <td>&lt; 7%</td>
+                            <td>
+                                @if (missedPct <= 7)
+                                {
+                                    <span class="stat-pill stat-pill-green">✓ On Target</span>
+                                }
+                                else
+                                {
+                                    <span class="stat-pill stat-pill-red">✗ Above Target</span>
+                                }
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Completion Rate</td>
+                            <td><strong>@healthyPct.ToString("F1")%</strong></td>
+                            <td>&gt; 83%</td>
+                            <td>
+                                @if (healthyPct >= 83)
+                                {
+                                    <span class="stat-pill stat-pill-green">✓ On Target</span>
+                                }
+                                else
+                                {
+                                    <span class="stat-pill stat-pill-red">✗ Below Target</span>
+                                }
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    new Chart(document.getElementById('rateChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Completed', 'Cancelled', 'Missed'],
+            datasets: [{
+                data: [@healthyPct.ToString("F1"), @cancellationPct.ToString("F1"), @missedPct.ToString("F1")],
+                backgroundColor: ['#1a7a4a', '#dc3545', '#f59e0b'],
+                borderWidth: 0,
+                hoverOffset: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            cutout: '65%',
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { padding: 20, font: { size: 12 } }
+                }
+            }
+        }
+    });
+</script>
+}
