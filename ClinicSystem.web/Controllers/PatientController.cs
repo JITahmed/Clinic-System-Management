@@ -1,8 +1,10 @@
 using ClinicSystem.Api.Data;
 using ClinicSystem.Api.Models;
+using ClinicSystem.web.Hubs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
 namespace ClinicSystem.web.Controllers
@@ -12,11 +14,13 @@ namespace ClinicSystem.web.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IHubContext<AppointmentHub> _hubContext;
 
-        public PatientController(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
+        public PatientController(ApplicationDbContext context, UserManager<ApplicationUser> userManager, IHubContext<AppointmentHub> hubContext)
         {
             _context = context;
             _userManager = userManager;
+            _hubContext = hubContext;
         }
 
         public async Task<IActionResult> Dashboard()
@@ -297,6 +301,14 @@ namespace ClinicSystem.web.Controllers
                 return View();
             }
 
+            var availabilityError = await CheckDoctorAvailabilityAsync(doctorId, appointmentDay, startTime, endTime);
+            if (availabilityError != null)
+            {
+                ModelState.AddModelError("", availabilityError);
+                await LoadBookingDropdowns();
+                return View();
+            }
+
             var appointment = new Appointment
             {
                 PatientId = patient.Id,
@@ -393,6 +405,8 @@ namespace ClinicSystem.web.Controllers
             }
 
             var appointment = await _context.Appointments
+                .Include(a => a.Doctor).ThenInclude(d => d.User)
+                .Include(a => a.Patient).ThenInclude(p => p.User)
                 .FirstOrDefaultAsync(a => a.Id == id && a.PatientId == patient.Id);
 
             if (appointment == null)
@@ -418,6 +432,16 @@ namespace ClinicSystem.web.Controllers
                 NotificationType.AppointmentCancelled,
                 appointment.Id
             );
+
+            await CreatePatientNotificationAsync(
+                appointment.Doctor?.UserId,
+                "Appointment Cancelled",
+                $"{appointment.Patient.User.FullName} has cancelled their appointment on {appointment.AppointmentDate:dd MMM yyyy} at {appointment.StartTime:hh\\:mm}.",
+                NotificationType.AppointmentCancelled,
+                appointment.Id
+            );
+
+            await BroadcastAppointmentAsync(appointment);
 
             TempData["SuccessMessage"] = "Appointment cancelled successfully.";
             return RedirectToAction(nameof(Upcoming));
@@ -504,6 +528,56 @@ namespace ClinicSystem.web.Controllers
             ViewBag.Specializations = await _context.Specializations
                 .OrderBy(s => s.Name)
                 .ToListAsync();
+        }
+
+        private async Task<string?> CheckDoctorAvailabilityAsync(int doctorId, DateTime day, TimeSpan start, TimeSpan end)
+        {
+            bool onLeave = await _context.DoctorLeaves.AnyAsync(l =>
+                l.DoctorId == doctorId &&
+                l.StartDate.Date <= day.Date &&
+                l.EndDate.Date >= day.Date);
+
+            if (onLeave)
+            {
+                return "The selected doctor is on leave on that date. Please choose another date or doctor.";
+            }
+
+            bool hasSchedule = await _context.DoctorSchedules
+                .AnyAsync(s => s.DoctorId == doctorId && s.IsActive);
+
+            if (hasSchedule)
+            {
+                var daySchedules = await _context.DoctorSchedules
+                    .Where(s => s.DoctorId == doctorId && s.IsActive && s.DayOfWeek == day.DayOfWeek)
+                    .ToListAsync();
+
+                if (!daySchedules.Any())
+                {
+                    return "The selected doctor does not work on that day. Please choose another day.";
+                }
+
+                bool withinHours = daySchedules.Any(s => start >= s.StartTime && end <= s.EndTime);
+                if (!withinHours)
+                {
+                    return "The selected time is outside the doctor's working hours.";
+                }
+            }
+
+            return null;
+        }
+
+        private async Task BroadcastAppointmentAsync(Appointment appointment)
+        {
+            await _hubContext.Clients.All.SendAsync("AppointmentUpdated", new
+            {
+                appointment.Id,
+                appointment.AppointmentReferenceNumber,
+                PatientName = appointment.Patient.User.FullName,
+                DoctorName = appointment.Doctor.User.FullName,
+                appointment.AppointmentDate,
+                StartTime = appointment.StartTime.ToString(@"hh\:mm"),
+                Status = appointment.Status.ToString()
+            });
         }
 
         private async Task CreatePatientNotificationAsync(

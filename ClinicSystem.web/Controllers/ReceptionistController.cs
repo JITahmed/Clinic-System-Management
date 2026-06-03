@@ -147,7 +147,7 @@ namespace ClinicSystem.web.Controllers
             var dayOfWeek = date.DayOfWeek;
             var schedule = await _context.DoctorSchedules
                 .FirstOrDefaultAsync(s => s.DoctorId == doctorId && s.DayOfWeek == dayOfWeek && s.IsActive);
-                
+
             // if no schedule
             if (schedule == null)
             {
@@ -160,7 +160,7 @@ namespace ClinicSystem.web.Controllers
                 .AnyAsync(l => l.DoctorId == doctorId &&
                                l.StartDate.Date <= date.Date &&
                                l.EndDate.Date >= date.Date);
-                               
+
             // if doctor on leave then no slots available
             if (onLeave)
             {
@@ -221,13 +221,21 @@ namespace ClinicSystem.web.Controllers
             var conflict = await _context.Appointments.AnyAsync(a =>
                 a.DoctorId == DoctorId &&
                 a.AppointmentDate.Date == AppointmentDate.Date &&
-                a.StartTime == start &&
                 a.Status != AppointmentStatus.Cancelled &&
-                a.Status != AppointmentStatus.Missed);
+                a.Status != AppointmentStatus.Missed &&
+                start < a.EndTime &&
+                end > a.StartTime);
 
             if (conflict)
             {
                 TempData["Error"] = "Please pick another one or refresh to see the latest availability";
+                return RedirectToAction(nameof(BookAppointment), new { patientId = PatientId });
+            }
+
+            var availabilityError = await CheckDoctorAvailabilityAsync(DoctorId, AppointmentDate, start, end);
+            if (availabilityError != null)
+            {
+                TempData["Error"] = availabilityError;
                 return RedirectToAction(nameof(BookAppointment), new { patientId = PatientId });
             }
 
@@ -386,6 +394,42 @@ namespace ClinicSystem.web.Controllers
         }
 
         // helper functions
+        private async Task<string?> CheckDoctorAvailabilityAsync(int doctorId, DateTime day, TimeSpan start, TimeSpan end)
+        {
+            bool onLeave = await _context.DoctorLeaves.AnyAsync(l =>
+                l.DoctorId == doctorId &&
+                l.StartDate.Date <= day.Date &&
+                l.EndDate.Date >= day.Date);
+
+            if (onLeave)
+            {
+                return "The selected doctor is on leave on that date. Please choose another date or doctor.";
+            }
+
+            bool hasSchedule = await _context.DoctorSchedules
+                .AnyAsync(s => s.DoctorId == doctorId && s.IsActive);
+
+            if (hasSchedule)
+            {
+                var daySchedules = await _context.DoctorSchedules
+                    .Where(s => s.DoctorId == doctorId && s.IsActive && s.DayOfWeek == day.DayOfWeek)
+                    .ToListAsync();
+
+                if (!daySchedules.Any())
+                {
+                    return "The selected doctor does not work on that day. Please choose another day.";
+                }
+
+                bool withinHours = daySchedules.Any(s => start >= s.StartTime && end <= s.EndTime);
+                if (!withinHours)
+                {
+                    return "The selected time is outside the doctor's working hours.";
+                }
+            }
+
+            return null;
+        }
+
         private static bool IsValidTransition(AppointmentStatus current, AppointmentStatus next)
         {
             return (current, next) switch

@@ -403,6 +403,49 @@ namespace ClinicSystem.web.Controllers
             });
 
             await _context.SaveChangesAsync();
+
+            var affectedAppointments = await _context.Appointments
+                .Include(a => a.Patient).ThenInclude(p => p.User)
+                .Where(a => a.DoctorId == DoctorId
+                    && a.AppointmentDate.Date >= StartDate.Date
+                    && a.AppointmentDate.Date <= EndDate.Date
+                    && a.Status != AppointmentStatus.Cancelled
+                    && a.Status != AppointmentStatus.Completed
+                    && a.Status != AppointmentStatus.Missed)
+                .ToListAsync();
+
+            if (affectedAppointments.Any())
+            {
+                var doctorUserId = await _context.Doctors
+                    .Where(d => d.Id == DoctorId)
+                    .Select(d => d.UserId)
+                    .FirstOrDefaultAsync();
+
+                foreach (var appt in affectedAppointments)
+                {
+                    appt.Status = AppointmentStatus.Cancelled;
+                    appt.CancellationReason = "Doctor unavailable during this period (leave).";
+
+                    await CreateNotificationAsync(
+                        appt.Patient.UserId,
+                        "Appointment Cancelled",
+                        $"Your appointment on {appt.AppointmentDate:dd MMM yyyy} at {appt.StartTime:hh\\:mm} has been cancelled because the doctor is on leave. Please book another time.",
+                        NotificationType.AppointmentCancelled,
+                        appt.Id);
+
+                    await CreateNotificationAsync(
+                        doctorUserId,
+                        "Appointment Cancelled",
+                        $"Your appointment with {appt.Patient.User.FullName} on {appt.AppointmentDate:dd MMM yyyy} at {appt.StartTime:hh\\:mm} was cancelled due to your leave period.",
+                        NotificationType.AppointmentCancelled,
+                        appt.Id);
+                }
+
+                await _context.SaveChangesAsync();
+                TempData["Success"] = $"Leave period added. {affectedAppointments.Count} affected appointment(s) were cancelled and the patients notified.";
+                return RedirectToAction(nameof(ManageLeave), new { id = DoctorId });
+            }
+
             TempData["Success"] = "Leave period added successfully.";
             return RedirectToAction(nameof(ManageLeave), new { id = DoctorId });
         }
@@ -488,6 +531,28 @@ namespace ClinicSystem.web.Controllers
 
 
 
+
+
+        private Task CreateNotificationAsync(string? userId, string title, string message, NotificationType type, int? relatedEntityId = null)
+        {
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return Task.CompletedTask;
+            }
+
+            _context.Notifications.Add(new Notification
+            {
+                UserId = userId,
+                Title = title,
+                Message = message,
+                Type = type,
+                IsRead = false,
+                RelatedEntityId = relatedEntityId,
+                CreatedAt = DateTime.UtcNow
+            });
+
+            return Task.CompletedTask;
+        }
 
     }
 }

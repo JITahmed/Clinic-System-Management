@@ -1,8 +1,10 @@
 using ClinicSystem.Api.Data;
 using ClinicSystem.Api.Models;
+using ClinicSystem.web.Hubs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
 namespace ClinicSystem.web.Controllers
@@ -13,15 +15,18 @@ namespace ClinicSystem.web.Controllers
         private readonly ApplicationDbContext _db;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ClinicSystem.Api.Services.NotificationService _notificationService;
+        private readonly IHubContext<AppointmentHub> _hubContext;
 
         public DoctorController(
             ApplicationDbContext db,
             UserManager<ApplicationUser> userManager,
-            ClinicSystem.Api.Services.NotificationService notificationService)
+            ClinicSystem.Api.Services.NotificationService notificationService,
+            IHubContext<AppointmentHub> hubContext)
         {
             _db = db;
             _userManager = userManager;
             _notificationService = notificationService;
+            _hubContext = hubContext;
 
         }
 
@@ -37,7 +42,7 @@ namespace ClinicSystem.web.Controllers
         public async Task<IActionResult> Dashboard()
         {
             var doctor = await GetCurrentDoctorAsync();
-            if (doctor == null) return NotFound("Doctor profile not found");
+            if (doctor == null) return NotFound("Doctor profile not found.");
 
             var today = DateTime.Today;
             var appointments = await _db.Appointments
@@ -56,7 +61,7 @@ namespace ClinicSystem.web.Controllers
             return View(appointments);
         }
 
-        
+
         public async Task<IActionResult> Consultation(int id)
         {
             var doctor = await GetCurrentDoctorAsync();
@@ -72,7 +77,7 @@ namespace ClinicSystem.web.Controllers
             if (appointment.Status != AppointmentStatus.CheckedIn &&
                 appointment.Status != AppointmentStatus.InProgress)
             {
-                TempData["Error"] = "This appointment cannot be started";
+                TempData["Error"] = "This appointment cannot be started.";
                 return RedirectToAction(nameof(Dashboard));
             }
 
@@ -80,6 +85,7 @@ namespace ClinicSystem.web.Controllers
             {
                 appointment.Status = AppointmentStatus.InProgress;
                 await _db.SaveChangesAsync();
+                await BroadcastAppointmentAsync(appointment, appointment.Patient.User.FullName, doctor.User.FullName);
             }
 
             var vm = new web.Models.ConsultationViewModel
@@ -99,7 +105,7 @@ namespace ClinicSystem.web.Controllers
             return View(vm);
         }
 
-      
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> SaveConsultation(web.Models.ConsultationViewModel model)
@@ -156,7 +162,9 @@ namespace ClinicSystem.web.Controllers
 
             await _db.SaveChangesAsync();
 
-            TempData["Success"] = $"Consultation for {appointment.Patient.User.FullName} saved";
+            await BroadcastAppointmentAsync(appointment, appointment.Patient.User.FullName, doctor.User.FullName);
+
+            TempData["Success"] = $"Consultation for {appointment.Patient.User.FullName} saved.";
             return RedirectToAction(nameof(Dashboard));
         }
 
@@ -176,7 +184,7 @@ namespace ClinicSystem.web.Controllers
 
             if (!hadAppointment)
             {
-                TempData["Error"] = "You can only view history for your own patients";
+                TempData["Error"] = "You can only view history for your own patients.";
                 return RedirectToAction(nameof(Dashboard));
             }
 
@@ -191,7 +199,7 @@ namespace ClinicSystem.web.Controllers
             return View(visitRecords);
         }
 
-        
+
         public async Task<IActionResult> Prescriptions(int id)
         {
             var doctor = await GetCurrentDoctorAsync();
@@ -207,7 +215,7 @@ namespace ClinicSystem.web.Controllers
             return View(visitRecord);
         }
 
-        
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddPrescription(int visitRecordId, string medicationName,
@@ -262,7 +270,7 @@ namespace ClinicSystem.web.Controllers
             return RedirectToAction(nameof(Prescriptions), new { id = visitRecordId });
         }
 
-        
+
         public async Task<IActionResult> Notifications()
         {
             var doctor = await GetCurrentDoctorAsync();
@@ -300,7 +308,7 @@ namespace ClinicSystem.web.Controllers
             return View(schedules);
         }
 
-       
+
         public async Task<IActionResult> UpcomingAppointments()
         {
             var doctor = await GetCurrentDoctorAsync();
@@ -335,7 +343,7 @@ namespace ClinicSystem.web.Controllers
 
             if (appointment.Status != AppointmentStatus.Requested)
             {
-                TempData["Error"] = "Only requested appointments can be confirmed";
+                TempData["Error"] = "Only requested appointments can be confirmed.";
                 return RedirectToAction(nameof(UpcomingAppointments));
             }
 
@@ -349,8 +357,24 @@ namespace ClinicSystem.web.Controllers
                 appointment.AppointmentDate,
                 appointment.Id);
 
-            TempData["Success"] = $"Appointment with {appointment.Patient.User.FullName} confirmed";
+            await BroadcastAppointmentAsync(appointment, appointment.Patient.User.FullName, doctor.User.FullName);
+
+            TempData["Success"] = $"Appointment with {appointment.Patient.User.FullName} confirmed.";
             return RedirectToAction(nameof(UpcomingAppointments));
+        }
+
+        private async Task BroadcastAppointmentAsync(Appointment appointment, string patientName, string doctorName)
+        {
+            await _hubContext.Clients.All.SendAsync("AppointmentUpdated", new
+            {
+                appointment.Id,
+                appointment.AppointmentReferenceNumber,
+                PatientName = patientName,
+                DoctorName = doctorName,
+                appointment.AppointmentDate,
+                StartTime = appointment.StartTime.ToString(@"hh\:mm"),
+                Status = appointment.Status.ToString()
+            });
         }
     }
 }
