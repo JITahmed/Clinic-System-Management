@@ -5,7 +5,7 @@ using System.Text.Json;
 
 namespace ClinicSystem.Reporting.Controllers
 {
-    [AuthorizeReporting]  // Custom filter - check JWT in session
+    [AuthorizeReporting]
     public class ReportsController : Controller
     {
         private readonly IHttpClientFactory _httpFactory;
@@ -20,21 +20,48 @@ namespace ClinicSystem.Reporting.Controllers
         public async Task<IActionResult> Dashboard()
         {
             var client = CreateAuthorizedClient();
-            var stats = await client.GetFromJsonAsync<List<StatusCount>>($"{_config["ApiSettings:BaseUrl"]}/api/reports/stats");
+            var response = await client.GetAsync($"{_config["ApiSettings:BaseUrl"]}/api/reports/stats");
+
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                HttpContext.Session.Clear();
+                return RedirectToAction("Login", "Account");
+            }
+
+            response.EnsureSuccessStatusCode();
+            var stats = await response.Content.ReadFromJsonAsync<List<StatusCount>>();
             return View(stats);
         }
 
         public async Task<IActionResult> DoctorUtilization()
         {
             var client = CreateAuthorizedClient();
-            var doctors = await client.GetFromJsonAsync<List<DoctorDto>>($"{_config["ApiSettings:BaseUrl"]}/api/doctors");
+            var response = await client.GetAsync($"{_config["ApiSettings:BaseUrl"]}/api/doctors");
+
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                HttpContext.Session.Clear();
+                return RedirectToAction("Login", "Account");
+            }
+
+            response.EnsureSuccessStatusCode();
+            var doctors = await response.Content.ReadFromJsonAsync<List<DoctorDto>>();
             return View(doctors);
         }
 
         public async Task<IActionResult> CancellationRates()
         {
             var client = CreateAuthorizedClient();
-            var rates = await client.GetFromJsonAsync<CancellationData>($"{_config["ApiSettings:BaseUrl"]}/api/reports/cancellations");
+            var response = await client.GetAsync($"{_config["ApiSettings:BaseUrl"]}/api/reports/cancellations");
+
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                HttpContext.Session.Clear();
+                return RedirectToAction("Login", "Account");
+            }
+
+            response.EnsureSuccessStatusCode();
+            var rates = await response.Content.ReadFromJsonAsync<CancellationData>();
             return View(rates);
         }
 
